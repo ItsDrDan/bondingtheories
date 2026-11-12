@@ -4,7 +4,13 @@ Working title **Orbital Overlap**. Repo/hub label: **Bonding Theories**. Suggest
 
 - **Courses:** CHEM 1A (default) and CHEM 1B review. Link with `?course=1A` or `?course=1B`; progress is saved separately per course on the student's device.
 - **Source:** OpenStax *Chemistry 2e* §7.6 (VSEPR) and §8.1–8.4. Numbers in the game: the H₂ energy curve (74 pm, 436 kJ/mol, §8.1), real angles (NH₃ 107.3°, H₂O 104.5°, §8.2; v1 said 107°, corrected in v2 to match OpenStax), and bond lengths/energies from **Table 8.1** (H–Cl, H–Br, H–I, C–C/C=C/C≡C, C–N/C=N/C≡N, C–O/C=O/C≡O), all checked against openstax.org on 2026-11-11. Bond orders, electron counts, unpaired electrons and magnetism are **computed** from the MO filling, never typed in.
-- **Current file:** `bonding-theories-v17.html` (version in the file name only). Earlier versions are kept here for comparison.
+- **Current file:** `bonding-theories-v18.html` (version in the file name only). Earlier versions are kept here for comparison.
+- **v18 VSEPR chart in hints, and a hint for every step (2026-11-12):**
+  - **VSEPR chart in the Hint box.** The illustrated chart from Lewis Structure Studio (electron groups × lone pairs, with wedge-and-dash drawings) opens inside the Hint for: Hybridize the center, Flat Lewis → real angle, Shape → groups & lone pairs, Shape around an atom, sp³d and sp³d², Hybrid table, Hybrid Mixer and How many are sp²?
+    - The drawings were made by running the Lewis game's own chart code, so they match that game. Here they are drawn at one common scale, and angles read 109.5° (the Lewis chart says 109°) to match OpenStax and the rest of this game.
+    - The chart is also at the bottom of the Bonding Sheet.
+    - Hints stay hidden in Skill Check, Challenge and Face-Off, so the chart doesn't show there.
+  - **Every step now has a hint.** The fixed-question topics (What makes a bond, Why bond strengths differ, Why hybridize?, Where π bonds come from, Restricted rotation, Resonance, LCAO pictures, MO concepts) used to fall back to "Go back to the Professor Tip above." Each now has a "how to start" hint. A check of every topic finds no step without one.
 - **v17 missed steps and Skill Check variety (2026-11-12):**
   - **Missed steps no longer look right.** In strict rounds (Skill Check, Challenge, Daily 5, Face-Off), a missed step used to be redrawn as a green ✓ box holding the correct answer, and the "Not quite" message was replaced by "Done." A student who typed 1 for the F₂⁻ bond order saw a green box with 0.5 in it. Grading was right; the display was misleading.
     - A missed step now shows in coral as "Step N: missed". It shows the student's answer with only the wrong boxes struck through (for example "Bond order: ~~1~~ · Unpaired electrons: 1 ✓"), the reason, then the correct answer.
