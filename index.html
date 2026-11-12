@@ -1652,6 +1652,79 @@ function genSCAtom() {
   const slipFor = n => { const d = tagSlip(A, n); return { slip: d[0], why: d[1] }; };
   return { topic: 'tagger', tag: F(M.f) + ' (typed)', stem: `<p class="lead">${molTitle(M)}</p><div class="figure">${molSvg(S, { nums: { [t]: 1 }, label: 'Structure with one numbered atom' })}</div>`, parts: [hybText(`Type the hybridization of atom 1 (${A.el}).`, A.hyb, slipFor, `${A.nb.length} bonded + ${A.lp} lone pair${A.lp === 1 ? '' : 's'} = ${A.groups} groups → ${hybH(A.hyb)}.`)] };
 }
+/* v16: end atoms in multiple bonds (the O of C=O, the N of C≡N) and whole-bond descriptions.
+   End atoms are hybridized by the same rule as any atom: bonded atoms + lone pairs (a C=O oxygen: 1 + 2 = 3 groups → sp²).
+   Extra carbonyl/amide molecules are used only by these two topics. */
+const TERM_EXTRA = [
+  { f: 'CH3CHO', name: 'acetaldehyde', lvl: 2, atoms: [['C', 0, 0], ['C', 1, 0], ['O', 1.5, -R3], ['H', 1.5, R3], ['H', 0, -1], ['H', 0, 1], ['H', -1, 0]], bonds: [[0, 1, 1], [1, 2, 2], [1, 3, 1], [0, 4, 1], [0, 5, 1], [0, 6, 1]] },
+  { f: 'CH3COCH3', name: 'acetone', lvl: 2, atoms: [['C', 0, 0], ['O', 0, -1], ['C', -1, 0], ['C', 1, 0], ['H', -2, 0], ['H', -1, -1], ['H', -1, 1], ['H', 2, 0], ['H', 1, -1], ['H', 1, 1]], bonds: [[0, 1, 2], [0, 2, 1], [0, 3, 1], [2, 4, 1], [2, 5, 1], [2, 6, 1], [3, 7, 1], [3, 8, 1], [3, 9, 1]] },
+  { f: 'HCONH2', name: 'formamide', lvl: 2, atoms: [['C', 0, 0], ['O', 0, -1], ['H', -1, 0], ['N', 1, 0], ['H', 2, 0], ['H', 1, 1]], bonds: [[0, 1, 2], [0, 2, 1], [0, 3, 1], [3, 4, 1], [3, 5, 1]] },
+  { f: 'CO(NH2)2', name: 'urea', lvl: 2, atoms: [['C', 0, 0], ['O', 0, -1], ['N', -1, 0], ['N', 1, 0], ['H', -2, 0], ['H', -1, 1], ['H', 2, 0], ['H', 1, 1]], bonds: [[0, 1, 2], [0, 2, 1], [0, 3, 1], [2, 4, 1], [2, 5, 1], [3, 6, 1], [3, 7, 1]] }
+];
+let TERM_MOLS = null;
+function termMols() {
+  if (TERM_MOLS) return TERM_MOLS;
+  return (TERM_MOLS = [...MULTI.filter(M => M.f !== 'C6H6'), ...TERM_EXTRA].map(M => ({ M, S: annotate(multiSpec(M)) }))
+    .concat(MOLS.filter(m => !m.q && !m.res && !info(m).expanded && !MULTI.some(M => M.f === m.f)).map(m => ({ M: { f: m.f, name: null }, S: annotate(scSpec(m)) }))));
+}
+let TERM_BANK = null;
+function termBank() {
+  if (TERM_BANK) return TERM_BANK;
+  const out = [];
+  termMols().forEach(({ M, S }) => S.atoms.forEach((A, t) => {
+    if (!['O', 'N'].includes(A.el) || A.nb.length !== 1) return;
+    const j = A.nb[0], b = S.bonds.find(x => (x.a === t && x.b === j) || (x.b === t && x.a === j));
+    if (!b || b.o < 2 || !HYB[A.groups]) return;
+    if (out.some(x => x.M.f === M.f && x.A.el === A.el && x.B.el === S.atoms[j].el)) return;   // one item per kind of end atom per molecule
+    out.push({ M, S, t, A, B: S.atoms[j], o: b.o });
+  }));
+  return (TERM_BANK = out);
+}
+const BOND_WORD = { 2: 'double', 3: 'triple' };
+function genTermHyb() {
+  const e = drawBag('termhyb', termBank()), A = e.A, B = e.B, w = BOND_WORD[e.o];
+  const groupsTxt = `1 bonded atom + ${A.lp} lone pair${A.lp === 1 ? '' : 's'} = ${A.groups} groups → ${hybH(A.hyb)}`;
+  const sol = `${A.el} (atom 1): ${groupsTxt}. The ${w} bond counts as <b>one</b> group. Its leftover ${LEFT_P[A.hyb]} unhybridized 2p orbital${LEFT_P[A.hyb] > 1 ? 's make' : ' makes'} the π bond${e.o === 3 ? 's' : ''} to ${B.el}.`;
+  const ask = `What is the hybridization of atom 1, the ${A.el} ${w}-bonded to ${B.el}?`;
+  const hint = 'Hybridize an end atom the same way as a central one: count its bonded atoms plus its lone pairs. A double or triple bond is one group.';
+  const part = chance(0.35)
+    ? Object.assign(hybText(`Type the hybridization of atom 1 (the ${A.el} ${w}-bonded to ${B.el}).`, A.hyb, n => { const d = tagSlip(A, n); return { slip: d[0], why: d[1] }; }, sol), { hint })
+    : choicePart(ask, ['sp', 'sp2', 'sp3'].map(h => h === A.hyb ? opt(hybH(h), true, groupsTxt + '.') : (d => opt(hybH(h), false, d[1], d[0]))(tagSlip(A, h))), { keep: true, hint, solution: sol });
+  return { topic: 'termhyb', tag: `${F(e.M.f)} · ${A.el} ${hybH(A.hyb)}`, stem: `<p class="lead">${molTitle(e.M)}</p><div class="figure">${molSvg(e.S, { nums: { [e.t]: 1 }, label: 'Structure with one end atom numbered' })}</div>`, tip: 'Any atom with lone pairs or bonds can be hybridized, not only the central one. Count its groups the usual way.', parts: [part] };
+}
+let BDESC_BANK = null;
+function bdescBank() {
+  if (BDESC_BANK) return BDESC_BANK;
+  const out = [], ROW2X = ['C', 'N', 'O'];
+  termMols().forEach(({ M, S }) => S.bonds.forEach((b, bi) => {
+    const A = S.atoms[b.a], B = S.atoms[b.b];
+    if (b.o < 2 || !ROW2X.includes(A.el) || !ROW2X.includes(B.el) || !HYB[A.groups] || !HYB[B.groups]) return;
+    const key = M.f + '|' + [A.el + A.hyb, B.el + B.hyb].sort().join('=') + b.o; if (out.some(x => x.key === key)) return;
+    out.push({ key, M, S, bi, b, A, B });
+  }));
+  return (BDESC_BANK = out);
+}
+function genBondDesc() {
+  const e = drawBag('bonddesc', bdescBank()), { A, B, b } = e, o = b.o, h = X => `${X.el} ${hybH(X.hyb)}`, p = X => `${X.el} 2p`;
+  const piTxt = o === 3 ? 'two π' : 'π';
+  const desc = (sig, pi, nPi) => `σ: ${sig}; ${nPi === 0 ? 'no π' : nPi === 2 ? 'two π' : 'π'}${nPi ? ': ' + pi : ''}`;
+  const right = desc(`${h(A)} – ${h(B)}`, `${p(A)} – ${p(B)}`, o - 1);
+  const opts = [opt(right, true, `The σ bond is head-on overlap of a hybrid from each atom (${h(A)}, ${h(B)}); the ${piTxt} bond${o === 3 ? 's are' : ' is'} side-by-side overlap of the leftover unhybridized 2p orbitals.`)];
+  const add = (html, why, slip) => { if (html !== right && !opts.some(x => x.html === html)) opts.push(opt(html, false, why, slip)); };
+  /* wrong hybrid on one atom (usually the end atom) */
+  const X = A.nb.length === 1 ? A : B.nb.length === 1 ? B : pick([A, B]), wh = X.hyb === 'sp3' ? 'sp2' : X.hyb === 'sp2' ? 'sp3' : 'sp2', hx = Y => Y === X ? `${X.el} ${hybH(wh)}` : h(Y);
+  add(desc(`${hx(A)} – ${hx(B)}`, `${p(A)} – ${p(B)}`, o - 1), tagSlip(X, wh)[1] + ` So ${X.el} is ${hybH(X.hyb)}.`, tagSlip(X, wh)[0]);
+  const pool = [
+    () => add(desc(`${h(A)} – ${h(B)}`, `${h(A)} – ${h(B)}`, o - 1), SLIP['pi-from-hybrid'], 'pi-from-hybrid'),
+    () => add(desc(`${p(A)} – ${p(B)}`, `${h(A)} – ${h(B)}`, o - 1), 'Those are swapped. Head-on hybrid overlap makes the σ bond; side-by-side 2p overlap makes the π.', 'sigma-vs-pi'),
+    () => add(desc(`${h(A)} – ${h(B)}`, `${p(A)} – ${p(B)}`, o === 2 ? 2 : 1), `A ${BOND_WORD[o]} bond is 1 σ + ${o - 1} π.`, 'pi-count'),
+    () => add(`${o === 2 ? 'two' : 'three'} σ: ${h(A)} – ${h(B)}`, `Only one σ bond fits on the axis between two atoms. The ${o === 2 ? 'second bond is' : 'other two bonds are'} π.`, 'sigma-pi-total')
+  ];
+  shuffle(pool).forEach(f => { if (opts.length < 4) f(); });
+  const lab = `${A.el}${o === 2 ? '=' : '≡'}${B.el}`;
+  const p1 = choicePart(`Which describes the highlighted ${lab} ${BOND_WORD[o]} bond?`, opts, { hint: 'Find each atom’s hybridization first (groups → sp, sp², sp³). σ uses hybrids; π uses the leftover 2p orbitals.', solution: `${right}. ${A.el}: ${A.groups} groups → ${hybH(A.hyb)}; ${B.el}: ${B.groups} groups → ${hybH(B.hyb)}.` });
+  return { topic: 'bonddesc', tag: `${F(e.M.f)} · ${lab}`, stem: `<p class="lead">${molTitle(e.M)}</p><div class="figure">${molSvg(e.S, { hl: e.bi, label: 'Structure with one bond highlighted' })}</div>`, tip: 'Describe a multiple bond in two parts: one σ (hybrid–hybrid, head-on) and the π part (2p–2p, side by side).', parts: [p1] };
+}
 /* an empty MO diagram students can fill as a scratch pad (not graded) */
 function scratchMO(an, vals) {
   const af = aoFill(an.atom), mo = vals || an.levels.map(l => Array(l.d).fill(0)), n = mo.flat().reduce((a, b) => a + b, 0);
@@ -1991,10 +2064,12 @@ const TOPICS = {
   reverse: { label: 'Shape → groups & lone pairs', tile: 't2', gen: genReverse, video: 'vsepr' },
   atomshape: { label: 'Shape around an atom', tile: 't2', gen: genAtomShape, video: 'vsepr' },
   tagger: { label: 'Tag every atom', tile: 't2', gen: genTagger, video: 'hyb' },
+  termhyb: { label: 'End atoms: C=O oxygen, C≡N nitrogen', tile: 't2', gen: genTermHyb, video: 'hyb' },
   expanded: { label: 'sp³d and sp³d²', tile: 't2', gen: genExpanded, video: 'vsepr', badge: 'expanded octet' },
   count: { label: 'Count σ and π', tile: 't3', gen: genCount, video: 'hyb' },
   skelcount: { label: 'σ/π in line drawings', tile: 't3', gen: genSkelCount, video: 'hyb' },
   label: { label: 'Label one bond', tile: 't3', gen: genLabel, video: 'hyb' },
+  bonddesc: { label: 'Describe a whole bond', tile: 't3', gen: genBondDesc, video: 'hyb' },
   labeler: { label: 'Bond Labeler (every bond)', tile: 't3', gen: genLabeler, video: 'hyb' },
   studio: { label: 'Orbital Studio (3D)', tile: 't3', gen: genStudio, video: 'hyb' },
   pisource: { label: 'Where π bonds come from', tile: 't3', gen: genPisource, video: 'hyb' },
@@ -2017,9 +2092,9 @@ const TOPICS = {
 const TILES = [
   { id: 't1', title: 'Overlap Basics', blurb: 'What makes a bond. σ vs π overlap.', sec: '§8.1', topics: ['whatbond', 'pecurve', 'gallery', 'which', 'strength'],
     ideas: ['A covalent bond = two <b>half-filled</b> orbitals overlapping. The shared pair sits between the nuclei.', 'Bond length = distance at the lowest energy. Bond energy = depth of the energy well (H₂: 74 pm, 436 kJ/mol).', 'Head-on overlap → <b>σ</b> (density on the axis). Side-by-side p overlap → <b>π</b> (above and below).', 'More overlap → stronger bond. In a series of similar bonds (H–Cl, H–Br, H–I), shorter bonds overlap better; a π bond is weaker than a σ bond (OpenStax Table 8.1).'] },
-  { id: 't2', title: 'Hybrid Workshop', blurb: 'sp, sp², sp³: groups → hybrids → shape.', sec: '§8.2', topics: ['why', 'table', 'groups', 'angle', 'reverse', 'howmany', 'atomshape', 'boxes', 'bondtype', 'mixer', 'tagger', 'expanded'],
+  { id: 't2', title: 'Hybrid Workshop', blurb: 'sp, sp², sp³: groups → hybrids → shape.', sec: '§8.2', topics: ['why', 'table', 'groups', 'angle', 'reverse', 'howmany', 'atomshape', 'boxes', 'bondtype', 'mixer', 'tagger', 'termhyb', 'expanded'],
     ideas: ['Electron groups = bonded atoms + lone pairs. A double or triple bond is <b>one</b> group.', 'Groups = hybrids: 2 → sp (180°), 3 → sp² (120°), 4 → sp³ (109.5°). Lone pairs sit in hybrids too.', 'n atomic orbitals in = n hybrids out. H is never hybridized.'] },
-  { id: 't3', title: 'Sigma & Pi', blurb: 'Count σ/π, label overlaps, rotation.', sec: '§8.3', topics: ['studio', 'count', 'skelcount', 'label', 'labeler', 'pisource', 'rotation', 'resonance', 'boss'],
+  { id: 't3', title: 'Sigma & Pi', blurb: 'Count σ/π, label overlaps, rotation.', sec: '§8.3', topics: ['studio', 'count', 'skelcount', 'label', 'bonddesc', 'labeler', 'pisource', 'rotation', 'resonance', 'boss'],
     ideas: ['Single = 1σ. Double = 1σ + 1π. Triple = 1σ + 2π.', 'σ bonds use hybrids (or H 1s). π bonds use leftover <b>unhybridized p</b> orbitals.', 'A π bond blocks rotation. Resonance spreads π electrons over several atoms.', 'Line drawings hide the H atoms on carbon, but every C–H is still a σ bond.'] },
   { id: 't4', title: 'MO Builder', blurb: 'Fill MO diagrams, bond order, magnetism.', sec: '§8.4', topics: ['lcao', 'ordering', 'moorder', 'builder', 'read', 'paralist', 'trends', 'ranker', 'ionize', 'moconcept', 'theory', 'o2magnet'],
     ideas: ['In phase → bonding MO. Out of phase → antibonding MO* (node between the nuclei).', 'Li₂–N₂: π2p below σ2p. O₂–Ne₂: σ2p below π2p. Count valence electrons and adjust for charge.', 'BO = ½ (bonding − antibonding). Higher BO → shorter, stronger bond. Any unpaired electron → paramagnetic.'] }
@@ -2027,7 +2102,7 @@ const TILES = [
 const SC_GEN = { scHyb: genSCHyb, scAtom: genSCAtom, scBO: genSCBO, count: genCount, skelcount: genSkelCount };
 const generate = t => { const q = (TOPICS[t] ? TOPICS[t].gen : SC_GEN[t])(); q.topic = q.topic || t; return q; };
 /* Daily 5 tiers: 2 easy → 2 medium → 1 hard */
-const TIER = { easy: ['whatbond', 'gallery', 'which', 'why', 'table', 'reverse', 'pisource', 'rotation', 'lcao', 'ordering', 'theory', 'moconcept'], medium: ['pecurve', 'strength', 'groups', 'angle', 'howmany', 'atomshape', 'paralist', 'moorder', 'boxes', 'bondtype', 'mixer', 'count', 'skelcount', 'label', 'resonance', 'read', 'trends', 'ranker'], hard: ['studio', 'tagger', 'labeler', 'builder', 'ionize', 'boss', 'o2magnet'] };
+const TIER = { easy: ['whatbond', 'gallery', 'which', 'why', 'table', 'reverse', 'pisource', 'rotation', 'lcao', 'ordering', 'theory', 'moconcept'], medium: ['pecurve', 'strength', 'groups', 'angle', 'howmany', 'atomshape', 'paralist', 'moorder', 'boxes', 'bondtype', 'mixer', 'count', 'skelcount', 'label', 'termhyb', 'bonddesc', 'resonance', 'read', 'trends', 'ranker'], hard: ['studio', 'tagger', 'labeler', 'builder', 'ionize', 'boss', 'o2magnet'] };
 if (typeof module !== 'undefined') module.exports = { boxBank, checkRoles, checkBondType, genBondType, refDiagram, checkMixer, checkRank, genSCHyb, genSCAtom, genSCBO, normHyb, TIER, OPTS, parseSmi, layoutComp, skelInfo, SKEL, BOSS, checkLabeler, checkTapcurve, MOLS, MULTI, info, electronsOK, multiSpec, sigmaPi, moAnalyze, moLevels, moFill, aoFill, checkMO, checkAO, checkBoxes, BOXCASES, TOPICS, TILES, generate, ANGLE, scSpec, molSvg, MO_SPECIES, lpAngles };
 /*LOGIC-END*/
 </script>

@@ -71,6 +71,9 @@ Make all five on one sheet so he looks identical in each. Cut each to **320 × 3
 | `assets/ach-skill.webp` | Skill Check Ready (8+ on Skill Check Prep) | A gold medal with a ribbon and a checkmark, a tiny pencil tucked behind it |
 | `assets/ach-daily.webp` | Daily Habit (Daily 5 three days in a row) | Three calendar pages in a row, each with a small flame, the third flame biggest |
 | `assets/ach-mixer.webp` | Hybrid Mixer Pro (mix the right hybrids 5 times) | A blender full of blue and coral lobes, pouring out three identical teardrop lobes |
+| `assets/ach-streak5.webp` | On a Roll (5 right in a row), added v15 | Pip riding a rolling chain of five glowing orbital spheres |
+| `assets/ach-streak10.webp` | Unbreakable Bond (10 right in a row), added v15 | Two atoms joined by a thick glowing double bond with a small padlock on it |
+| `assets/ach-explorer.webp` | Explorer (try Learn, Practice, Challenge, Daily 5 and Skill Check Prep), added v15 | Pip with a compass and a small map dotted with five mode icons |
 
 ## Where the images go
 

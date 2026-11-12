@@ -4,7 +4,14 @@ Working title **Orbital Overlap**. Repo/hub label: **Bonding Theories**. Suggest
 
 - **Courses:** CHEM 1A (default) and CHEM 1B review. Link with `?course=1A` or `?course=1B`; progress is saved separately per course on the student's device.
 - **Source:** OpenStax *Chemistry 2e* §7.6 (VSEPR) and §8.1–8.4. Numbers in the game: the H₂ energy curve (74 pm, 436 kJ/mol, §8.1), real angles (NH₃ 107.3°, H₂O 104.5°, §8.2; v1 said 107°, corrected in v2 to match OpenStax), and bond lengths/energies from **Table 8.1** (H–Cl, H–Br, H–I, C–C/C=C/C≡C, C–N/C=N/C≡N, C–O/C=O/C≡O), all checked against openstax.org on 2026-11-11. Bond orders, electron counts, unpaired electrons and magnetism are **computed** from the MO filling, never typed in.
-- **Current file:** `bonding-theories-v15.html` (version in the file name only). Earlier versions are kept here for comparison.
+- **Current file:** `bonding-theories-v16.html` (version in the file name only). Earlier versions are kept here for comparison.
+- **v16 end atoms and whole-bond descriptions (2026-11-12):**
+  - **New Hybrid Workshop topic, "End atoms: C=O oxygen, C≡N nitrogen":** asks the hybridization of an O or N at the end of a double or triple bond, using the same rule as any atom (bonded atoms + lone pairs). For example, a C=O oxygen is 1 + 2 = 3 groups → sp², and a C≡N nitrogen is 1 + 1 = 2 → sp. About a third of these questions are typed instead of multiple choice.
+    - Molecules: 15 end atoms from the game's molecules (N₂, HCN, CO₂, CH₂O, CH₃CN, HCOOH, HONO, CH₃COOH, acrylonitrile, Cl₂CO, ClNO) plus four molecules added for these two topics only: acetaldehyde, acetone, formamide and urea.
+  - **New Sigma & Pi topic, "Describe a whole bond":** pick the full description of a highlighted multiple bond, for example "σ: C sp² – O sp²; π: C 2p – O 2p". There are 20 bonds: C=O, C=C, C≡C, C≡N, N≡N, N=N and N=O.
+    - Wrong choices: a wrong hybrid on the end atom (O called sp³), π made from hybrids, σ and π swapped, the wrong number of π bonds, and "two σ" or "three σ".
+  - Both topics are single-step, so the question-bank sampler copies them into the shared bank, and from there into the hub Daily 5. Both are in the Daily 5 "medium" tier and in Challenge.
+  - **Terminal-atom convention:** these topics, Orbital boxes, Label one bond and Bond Labeler all hybridize end O and N atoms by counting groups. Tag every atom and the typed Skill Check atom questions still use only atoms bonded to 2+ others.
 - **v15 audit fixes (2026-11-12):**
   - **Scoring:** in Daily 5, Skip used to pull a new question without moving the round on, so a slot could be answered twice (a Daily 5 could show "7 / 7") and a miss could be erased. Now, in any round, Skip reveals the rest of the question, counts it as missed, and hides itself once the question is done.
   - **Orbital roles:** roles are now checked orbital by orbital. Labeling the ↑↓ hybrid "σ bond" and the ↑ hybrid "lone pair" used to pass because the roles were compared as a set.
