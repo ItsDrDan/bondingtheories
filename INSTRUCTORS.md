@@ -4,7 +4,23 @@ Working title **Orbital Overlap**. Repo/hub label: **Bonding Theories**. Suggest
 
 - **Courses:** CHEM 1A (default) and CHEM 1B review. Link with `?course=1A` or `?course=1B`; progress is saved separately per course on the student's device.
 - **Source:** OpenStax *Chemistry 2e* §7.6 (VSEPR) and §8.1–8.4. Numbers in the game: the H₂ energy curve (74 pm, 436 kJ/mol, §8.1), real angles (NH₃ 107.3°, H₂O 104.5°, §8.2; v1 said 107°, corrected in v2 to match OpenStax), and bond lengths/energies from **Table 8.1** (H–Cl, H–Br, H–I, C–C/C=C/C≡C, C–N/C=N/C≡N, C–O/C=O/C≡O), all checked against openstax.org on 2026-11-11. Bond orders, electron counts, unpaired electrons and magnetism are **computed** from the MO filling, never typed in.
-- **Current file:** `bonding-theories-v3.html` (version in the file name only). v2 is live in `ItsDrDan/bondingtheories`; v1 and v2 are kept here for comparison.
+- **Current file:** `bonding-theories-v4.html` (version in the file name only). v3 is live in `ItsDrDan/bondingtheories`; earlier versions are kept here for comparison.
+- **Art:** see `ASSETS.md` (the brief for ChatGPT). v4 picks up each file automatically from `assets/` once it exists and falls back to the drawings and brand badges until then.
+
+## Accuracy pass (v4, Nov 11, 2026)
+
+An independent read of every question, explanation, data table and the MO logic. Fixed:
+- Carbonate: "three C=O double bonds would put **12** electrons around C" (was 10).
+- XeF₂ and XeF₄ angle answers no longer say the lone pairs "squeeze" the angle (they sit symmetrically: exactly 180° and 90°); the 109.5° "ideal tetrahedral" distractor now appears only for 4-group molecules; XeF₂'s 90° distractor explains axial vs equatorial.
+- SF₆ and XeF₄ now ask for the angle between **neighboring** F atoms and never offer 180° (which is a real trans angle).
+- O₂ → O₂⁻: the electron goes to "the lowest MO with room (π*2p holds only 2 of 4)", not "the LUMO, half-filled".
+- "Which theory?" N₂ vs N₂⁺: VB has no simple way to give a fractional bond order (instead of "can't handle odd electrons").
+- "Shorter bond → better overlap → stronger" is now stated for a series of similar bonds (H–Cl/H–Br/H–I), since it isn't general (F–F is shorter but weaker than Cl–Cl).
+- The sp electron-geometry question no longer offers "Bent".
+- Orbital-box overfill feedback explains by bonding role instead of energy.
+- Molecules with functional groups are shown by formula only (CH₃OH, CH₃NH₂, CH₃CN, HCOOH, C₃H₃N); hydrocarbons keep their names.
+
+Checked and found correct: all MOLS/MULTI electron counts and Lewis structures, the ANGLE and Table 8.1 values, MO orderings, all 23 species' bond orders and magnetism, HOMO/LUMO choices, ranking families, orbital boxes and roles, the Mixer, skeletal σ/π counts, caffeine and aspirin, and the Bonding Sheet.
 - **Links:** `?mode=daily`, `?mode=skill`, `?mode=challenge`, `?mode=faceoff` (Face-Off only once unlocked), `?mode=learn`.
 
 ## New in v3
