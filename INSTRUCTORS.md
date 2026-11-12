@@ -4,7 +4,24 @@ Working title **Orbital Overlap**. Repo/hub label: **Bonding Theories**. Suggest
 
 - **Courses:** CHEM 1A (default) and CHEM 1B review. Link with `?course=1A` or `?course=1B`; progress is saved separately per course on the student's device.
 - **Source:** OpenStax *Chemistry 2e* §7.6 (VSEPR) and §8.1–8.4. Numbers in the game: the H₂ energy curve (74 pm, 436 kJ/mol, §8.1), real angles (NH₃ 107.3°, H₂O 104.5°, §8.2; v1 said 107°, corrected in v2 to match OpenStax), and bond lengths/energies from **Table 8.1** (H–Cl, H–Br, H–I, C–C/C=C/C≡C, C–N/C=N/C≡N, C–O/C=O/C≡O), all checked against openstax.org on 2026-11-11. Bond orders, electron counts, unpaired electrons and magnetism are **computed** from the MO filling, never typed in.
-- **Current file:** `bonding-theories-v19.html` (version in the file name only). Earlier versions are kept here for comparison.
+- **Current file:** `bonding-theories-v20.html` (version in the file name only). Earlier versions are kept here for comparison.
+- **v20 more bond-energy problems and resonance bond order (2026-11-12):**
+  - **16 new bond-energy reactions, 37 in all.** All values are recomputed with OpenStax Table 7.3. The Tro test bank uses its own values (C=O 799, C–H 414), so only its reactions were used as models; the wording is original.
+    - Modeled on OpenStax Ch 7 exercises 65–66: CH₄ + I₂ (+30 kJ, a true endothermic one), C₂H₄ + 3 O₂ (−1055), 2 C₂H₆ + 7 O₂ (−2340), Cl₂ + 3 F₂ → 2 ClF₃ (−807).
+    - Modeled on Tro Ch 10 items: C₂H₂ + 2 Br₂ (−228), PCl₃ + Cl₂ (−417).
+    - New: C₂H₄ + Cl₂ (−151), C₂H₄ + Br₂ (−94), H₂ + O₂ → H₂O₂ (−134), CH₂O + H₂ (−52) and its reverse (+52), ethanol combustion (−1020), 2 NH₃ + 3 Cl₂ (−469), N₂ + 2 H₂ → N₂H₄ (+98), 2 HBr (+114), 2 HI (+4).
+    - Every reaction is checked for balance, ΔH and electron counts.
+  - **New topic, "Which structure is more stable?"** (Overlap Basics), modeled on OpenStax exercise 67. Add up all the bond energies in two isomers; the larger total is more stable. Half the items ask for both totals first.
+    - Pairs: H₂N–OH 1444 vs H₃N–O 1370; ethanol 3234 vs dimethyl ether 3190; acetaldehyde 2746 vs ethenol 2670; HCN 1306 vs HNC 1281; HOCl 669 vs HClO 637.
+    - Lone pairs on formal-charge atoms are set by hand. Formal charges are not drawn.
+  - **New topic, "Bond strength & energy concepts"** (Overlap Basics), modeled on OpenStax exercise 64 and Tro items 21–23 and 51.
+    - Which bond is strongest/weakest within a family: single/double/triple, H–X and C–X down the halogens, C–H/N–H/O–H, C–C/C–N/C–O. It uses Table 7.3, and the F–F anomaly is avoided.
+    - Six concept questions: breaking bonds is endothermic, when a reaction is exothermic, why the result is an estimate, triple strongest, the definition of D, and forming 2 mol H–Cl releases 864 kJ.
+  - **New topic, "Bond order with resonance"** (Sigma & Pi). Average bond order = total bonds in one structure ÷ number of equivalent positions.
+    - Species: CO₃²⁻ and NO₃⁻ (4/3), NO₂⁻, O₃, formate HCO₂⁻ and benzene C–C (3/2).
+    - Half the items add a bond-length/strength comparison: every bond is identical and in between a single and a double bond.
+    - Answers like 4/3, 1.33 or 1⅓ are accepted (±0.011). 1.3 is not.
+  - Number fields can now carry their own tolerance (`tol`). The question-bank sampler passes it on, so bank items accept 1.33 for 4/3.
 - **v19 bond energies → ΔH (OpenStax §7.5, 2026-11-12):**
   - **Two new topics in the Overlap Basics tile** (the tile now reads §7.5, §8.1).
     - **Bond energies → ΔH:** four steps. (1) Count every bond in the reactants (times the coefficients) and add up ΣD broken. (2) The same for bonds formed in the products. (3) ΔH = ΣD(broken) − ΣD(formed). (4) Exothermic or endothermic.

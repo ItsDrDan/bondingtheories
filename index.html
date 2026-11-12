@@ -102,6 +102,7 @@ main.panel{padding:20px;scroll-margin-top:calc(var(--topbar) + 10px)}
 .rxn-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 8px;margin:6px 0}.rxn-sp{display:inline-flex;align-items:center;gap:2px}.rxn-co{font-weight:800;font-size:1.2rem;margin-right:2px}.rxn-plus{font-weight:800;font-size:1.2rem;color:var(--muted)}
 .rxn-row svg.mol{max-width:170px;height:auto}
 .be-full td,.be-full th{padding:3px 6px;font-size:.85rem}
+.iso-row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 24px}.iso-col{text-align:center}.iso-col b{display:block}
 .vs-hint{margin-top:10px}.vs-hint summary{cursor:pointer;font-weight:800;min-height:32px}
 .vs-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:6px}
 .vs-chart{border-collapse:collapse;min-width:560px;width:100%;table-layout:fixed;font-size:.78rem;background:#fff}
@@ -1421,7 +1422,7 @@ const BE_TABLE = { 'H–H': 436, 'H–C': 415, 'H–N': 390, 'H–O': 464, 'H–
   'N–N': 160, 'N=N': 418, 'N≡N': 946, 'N–O': 200, 'N–F': 270, 'N–P': 210, 'N–Cl': 200, 'N–Br': 245, 'O–O': 140, 'O=O': 498, 'O–F': 160, 'O–Si': 370, 'O–P': 350, 'O–Cl': 205, 'O–I': 200,
   'F–F': 160, 'F–Si': 540, 'F–P': 489, 'F–S': 285, 'F–Cl': 255, 'F–Br': 235, 'Si–Si': 230, 'Si–P': 215, 'Si–S': 225, 'Si–Cl': 359, 'Si–Br': 290, 'Si–I': 215,
   'P–P': 215, 'P–S': 230, 'P–Cl': 330, 'P–Br': 270, 'P–I': 215, 'S–S': 215, 'S–Cl': 250, 'S–Br': 215, 'Cl–Cl': 243, 'Cl–Br': 220, 'Cl–I': 210, 'Br–Br': 190, 'Br–I': 180, 'I–I': 150 };
-const BE_RANK = { C: 0, N: 1, O: 2, H: 3, F: 4, Cl: 5, Br: 6, I: 7 };
+const BE_RANK = { C: 0, N: 1, O: 2, H: 3, P: 3.5, F: 4, Cl: 5, Br: 6, I: 7 };
 const BE_SYM = { 1: '–', 2: '=', 3: '≡' };
 const beLabel = (a, b, o) => { const [x, y] = [a, b].sort((p, q) => (BE_RANK[p] ?? 9) - (BE_RANK[q] ?? 9)); return x + BE_SYM[o] + y; };   // display: C–H, O–H, C=O
 const beD = lab => { if (BE_TABLE[lab] != null) return BE_TABLE[lab]; const m = lab.match(/^([A-Z][a-z]?)([–=≡])([A-Z][a-z]?)$/); return m ? BE_TABLE[m[3] + m[2] + m[1]] : undefined; };
@@ -1437,18 +1438,40 @@ const BE_SP = {
   CH3OH: [['C', 0, 0], ['O', 1, 0], ['H', -1, 0], ['H', 0, -1], ['H', 0, 1], ['H', 2, 0]],
   C3H8: [['C', 0, 0], ['C', 1, 0], ['C', 2, 0], ['H', -1, 0], ['H', 0, -1], ['H', 0, 1], ['H', 1, -1], ['H', 1, 1], ['H', 3, 0], ['H', 2, -1], ['H', 2, 1]],
   N2H4: [['N', 0, 0], ['N', 1, 0], ['H', -1, 0], ['H', 0, -1], ['H', 2, 0], ['H', 1, 1]], H2O2: [['H', -1, 0], ['O', 0, 0], ['O', 1, 0], ['H', 1, 1]],
-  HCN: [['H', -1, 0], ['C', 0, 0], ['N', 1, 0]], CH3NH2: [['C', 0, 0], ['N', 1, 0], ['H', -1, 0], ['H', 0, -1], ['H', 0, 1], ['H', 2, 0], ['H', 1, 1]]
+  HCN: [['H', -1, 0], ['C', 0, 0], ['N', 1, 0]], CH3NH2: [['C', 0, 0], ['N', 1, 0], ['H', -1, 0], ['H', 0, -1], ['H', 0, 1], ['H', 2, 0], ['H', 1, 1]],
+  /* v20 */
+  CH3I: [['C', 0, 0], ['I', 1.1, 0], ['H', -1, 0], ['H', 0, -1], ['H', 0, 1]], ClF3: [['Cl', 0, 0], ['F', 1.2, 0], ['F', 0, -1.2], ['F', 0, 1.2]],
+  C2H2Br4: [['C', 0, 0], ['C', 1, 0], ['H', 0, -1], ['Br', -1.1, 0], ['Br', 0, 1.1], ['H', 1, -1], ['Br', 2.1, 0], ['Br', 1, 1.1]],
+  PCl3: [['P', 0, 0], ['Cl', -1.2, 0], ['Cl', 1.2, 0], ['Cl', 0, 1.2]], PCl5: [['P', 0, 0], ['Cl', -1.2, 0], ['Cl', 1.2, 0], ['Cl', 0, -1.2], ['Cl', 0, 1.2], ['Cl', 1, 1]],
+  C2H4Cl2: [['C', 0, 0], ['C', 1, 0], ['Cl', -1.1, 0], ['H', 0, -1], ['H', 0, 1], ['Cl', 2.1, 0], ['H', 1, -1], ['H', 1, 1]],
+  C2H4Br2: [['C', 0, 0], ['C', 1, 0], ['Br', -1.1, 0], ['H', 0, -1], ['H', 0, 1], ['Br', 2.1, 0], ['H', 1, -1], ['H', 1, 1]],
+  CH2O: [['C', 0, 0], ['O', 0, -1], ['H', -R3, 0.5], ['H', R3, 0.5]],
+  C2H5OH: [['C', 0, 0], ['C', 1, 0], ['O', 2, 0], ['H', 3, 0], ['H', -1, 0], ['H', 0, -1], ['H', 0, 1], ['H', 1, -1], ['H', 1, 1]],
+  /* isomer pairs (some need formal charges, so their lone pairs are set below) */
+  NH2OH: [['N', 0, 0], ['O', 1, 0], ['H', -1, 0], ['H', 0, 1], ['H', 2, 0]], H3NO: [['N', 0, 0], ['O', 1, 0], ['H', -1, 0], ['H', 0, -1], ['H', 0, 1]],
+  CH3OCH3: [['C', 0, 0], ['O', 1, 0], ['C', 2, 0], ['H', -1, 0], ['H', 0, -1], ['H', 0, 1], ['H', 3, 0], ['H', 2, -1], ['H', 2, 1]],
+  CH3CHO: [['C', 0, 0], ['C', 1, 0], ['O', 1.5, -R3], ['H', 1.5, R3], ['H', -1, 0], ['H', 0, -1], ['H', 0, 1]],
+  C2H3OH: [['C', 0, 0], ['C', 1, 0], ['H', -0.5, -R3], ['H', -0.5, R3], ['H', 1.5, -R3], ['O', 1.5, R3], ['H', 2.5, R3]],
+  HNC: [['H', -1, 0], ['N', 0, 0], ['C', 1, 0]], HOCl: [['H', -1, 0], ['O', 0, 0], ['Cl', 1.1, 0]], HClO: [['H', -1, 0], ['Cl', 0, 0], ['O', 1.1, 0]]
 };
+const BE_LPO = { H3NO: { 0: 0, 1: 3 }, HNC: { 1: 0, 2: 1 }, HClO: { 1: 2, 2: 3 } };   // lone pairs where an atom carries a formal charge
 const BE_BONDS = {
   H2: [[0, 1, 1]], Cl2: [[0, 1, 1]], F2: [[0, 1, 1]], Br2: [[0, 1, 1]], I2: [[0, 1, 1]], HCl: [[0, 1, 1]], HF: [[0, 1, 1]], HBr: [[0, 1, 1]], HI: [[0, 1, 1]],
   O2: [[0, 1, 2]], N2: [[0, 1, 3]], H2O: [[0, 1, 1], [0, 2, 1]], NH3: [[0, 1, 1], [0, 2, 1], [0, 3, 1]], CH4: [[0, 1, 1], [0, 2, 1], [0, 3, 1], [0, 4, 1]],
   CO2: [[0, 1, 2], [1, 2, 2]], C2H4: [[0, 1, 2], [0, 2, 1], [0, 3, 1], [1, 4, 1], [1, 5, 1]], C2H6: [[0, 1, 1], [0, 2, 1], [0, 3, 1], [0, 4, 1], [1, 5, 1], [1, 6, 1], [1, 7, 1]],
   C2H2: [[0, 1, 1], [1, 2, 3], [2, 3, 1]], CH3Cl: [[0, 1, 1], [0, 2, 1], [0, 3, 1], [0, 4, 1]], C2H5Cl: [[0, 1, 1], [1, 2, 1], [0, 3, 1], [0, 4, 1], [0, 5, 1], [1, 6, 1], [1, 7, 1]],
   CH3OH: [[0, 1, 1], [0, 2, 1], [0, 3, 1], [0, 4, 1], [1, 5, 1]], C3H8: [[0, 1, 1], [1, 2, 1], [0, 3, 1], [0, 4, 1], [0, 5, 1], [1, 6, 1], [1, 7, 1], [2, 8, 1], [2, 9, 1], [2, 10, 1]],
-  N2H4: [[0, 1, 1], [0, 2, 1], [0, 3, 1], [1, 4, 1], [1, 5, 1]], H2O2: [[0, 1, 1], [1, 2, 1], [2, 3, 1]], HCN: [[0, 1, 1], [1, 2, 3]], CH3NH2: [[0, 1, 1], [0, 2, 1], [0, 3, 1], [0, 4, 1], [1, 5, 1], [1, 6, 1]]
+  N2H4: [[0, 1, 1], [0, 2, 1], [0, 3, 1], [1, 4, 1], [1, 5, 1]], H2O2: [[0, 1, 1], [1, 2, 1], [2, 3, 1]], HCN: [[0, 1, 1], [1, 2, 3]], CH3NH2: [[0, 1, 1], [0, 2, 1], [0, 3, 1], [0, 4, 1], [1, 5, 1], [1, 6, 1]],
+  CH3I: [[0, 1, 1], [0, 2, 1], [0, 3, 1], [0, 4, 1]], ClF3: [[0, 1, 1], [0, 2, 1], [0, 3, 1]], C2H2Br4: [[0, 1, 1], [0, 2, 1], [0, 3, 1], [0, 4, 1], [1, 5, 1], [1, 6, 1], [1, 7, 1]],
+  PCl3: [[0, 1, 1], [0, 2, 1], [0, 3, 1]], PCl5: [[0, 1, 1], [0, 2, 1], [0, 3, 1], [0, 4, 1], [0, 5, 1]],
+  C2H4Cl2: [[0, 1, 1], [0, 2, 1], [0, 3, 1], [0, 4, 1], [1, 5, 1], [1, 6, 1], [1, 7, 1]], C2H4Br2: [[0, 1, 1], [0, 2, 1], [0, 3, 1], [0, 4, 1], [1, 5, 1], [1, 6, 1], [1, 7, 1]],
+  CH2O: [[0, 1, 2], [0, 2, 1], [0, 3, 1]], C2H5OH: [[0, 1, 1], [1, 2, 1], [2, 3, 1], [0, 4, 1], [0, 5, 1], [0, 6, 1], [1, 7, 1], [1, 8, 1]],
+  NH2OH: [[0, 1, 1], [0, 2, 1], [0, 3, 1], [1, 4, 1]], H3NO: [[0, 1, 1], [0, 2, 1], [0, 3, 1], [0, 4, 1]],
+  CH3OCH3: [[0, 1, 1], [1, 2, 1], [0, 3, 1], [0, 4, 1], [0, 5, 1], [2, 6, 1], [2, 7, 1], [2, 8, 1]], CH3CHO: [[0, 1, 1], [1, 2, 2], [1, 3, 1], [0, 4, 1], [0, 5, 1], [0, 6, 1]],
+  C2H3OH: [[0, 1, 2], [0, 2, 1], [0, 3, 1], [1, 4, 1], [1, 5, 1], [5, 6, 1]], HNC: [[0, 1, 1], [1, 2, 3]], HOCl: [[0, 1, 1], [1, 2, 1]], HClO: [[0, 1, 1], [1, 2, 1]]
 };
-const BE_NAME = { CH4: 'methane', C2H4: 'ethene', C2H6: 'ethane', C2H2: 'ethyne', CH3OH: 'methanol', C3H8: 'propane', N2H4: 'hydrazine', H2O2: 'hydrogen peroxide', NH3: 'ammonia', HCN: 'hydrogen cyanide', CH3NH2: 'methylamine', CH3Cl: 'chloromethane', C2H5Cl: 'chloroethane' };
-const beSpec = f => multiSpec({ f, atoms: BE_SP[f], bonds: BE_BONDS[f] });
+const BE_NAME = { CH3I: 'iodomethane', ClF3: 'chlorine trifluoride', C2H2Br4: '1,1,2,2-tetrabromoethane', PCl3: 'phosphorus trichloride', PCl5: 'phosphorus pentachloride', C2H4Cl2: '1,2-dichloroethane', C2H4Br2: '1,2-dibromoethane', CH2O: 'formaldehyde', C2H5OH: 'ethanol', NH2OH: 'hydroxylamine', CH3OCH3: 'dimethyl ether', CH3CHO: 'acetaldehyde', C2H3OH: 'ethenol (vinyl alcohol)', HNC: 'hydrogen isocyanide', HOCl: 'hypochlorous acid', CH4: 'methane', C2H4: 'ethene', C2H6: 'ethane', C2H2: 'ethyne', CH3OH: 'methanol', C3H8: 'propane', N2H4: 'hydrazine', H2O2: 'hydrogen peroxide', NH3: 'ammonia', HCN: 'hydrogen cyanide', CH3NH2: 'methylamine', CH3Cl: 'chloromethane', C2H5Cl: 'chloroethane' };
+const beSpec = f => { const S = multiSpec({ f, atoms: BE_SP[f], bonds: BE_BONDS[f] }); Object.entries(BE_LPO[f] || {}).forEach(([i, lp]) => { S.atoms[i].lp = lp; }); return S; };
 function beBonds(f) { const S = beSpec(f), c = {}; S.bonds.forEach(b => { const k = beLabel(S.atoms[b.a].el, S.atoms[b.b].el, b.o); c[k] = (c[k] || 0) + 1; }); return c; }
 const BE_RXN = [
   [[[1, 'H2'], [1, 'F2']], [[2, 'HF']]], [[[1, 'H2'], [1, 'Br2']], [[2, 'HBr']]], [[[1, 'H2'], [1, 'I2']], [[2, 'HI']]], [[[1, 'H2'], [1, 'Cl2']], [[2, 'HCl']]],
@@ -1457,6 +1480,12 @@ const BE_RXN = [
   [[[1, 'C2H4'], [1, 'HCl']], [[1, 'C2H5Cl']]], [[[1, 'C2H6'], [1, 'Cl2']], [[1, 'C2H5Cl'], [1, 'HCl']]], [[[2, 'CH3OH'], [3, 'O2']], [[2, 'CO2'], [4, 'H2O']]],
   [[[1, 'C3H8'], [5, 'O2']], [[3, 'CO2'], [4, 'H2O']]], [[[1, 'N2H4'], [1, 'O2']], [[1, 'N2'], [2, 'H2O']]], [[[2, 'H2O2']], [[2, 'H2O'], [1, 'O2']]],
   [[[1, 'HCN'], [2, 'H2']], [[1, 'CH3NH2']]],
+  /* v20: modeled on OpenStax Ch 7 exercises 65–66 and the Tro test bank (recomputed with Table 7.3), plus new ones */
+  [[[1, 'CH4'], [1, 'I2']], [[1, 'CH3I'], [1, 'HI']]], [[[1, 'C2H4'], [3, 'O2']], [[2, 'CO2'], [2, 'H2O']]], [[[2, 'C2H6'], [7, 'O2']], [[4, 'CO2'], [6, 'H2O']]],
+  [[[1, 'Cl2'], [3, 'F2']], [[2, 'ClF3']]], [[[1, 'C2H2'], [2, 'Br2']], [[1, 'C2H2Br4']]], [[[1, 'PCl3'], [1, 'Cl2']], [[1, 'PCl5']]],
+  [[[1, 'C2H4'], [1, 'Cl2']], [[1, 'C2H4Cl2']]], [[[1, 'C2H4'], [1, 'Br2']], [[1, 'C2H4Br2']]], [[[1, 'H2'], [1, 'O2']], [[1, 'H2O2']]],
+  [[[1, 'CH2O'], [1, 'H2']], [[1, 'CH3OH']]], [[[1, 'C2H5OH'], [3, 'O2']], [[2, 'CO2'], [3, 'H2O']]], [[[2, 'NH3'], [3, 'Cl2']], [[1, 'N2'], [6, 'HCl']]],
+  [[[1, 'N2'], [2, 'H2']], [[1, 'N2H4']]], [[[1, 'CH3OH']], [[1, 'CH2O'], [1, 'H2']]], [[[2, 'HBr']], [[1, 'H2'], [1, 'Br2']]], [[[2, 'HI']], [[1, 'H2'], [1, 'I2']]],
   /* endothermic: bonds broken are stronger than bonds formed */
   [[[2, 'NH3']], [[1, 'N2'], [3, 'H2']]], [[[2, 'HF']], [[1, 'H2'], [1, 'F2']]], [[[1, 'C2H6']], [[1, 'C2H4'], [1, 'H2']]], [[[2, 'H2O']], [[2, 'H2'], [1, 'O2']]]
 ];
@@ -1501,6 +1530,64 @@ function genBondEnergy() {
 function genBEQuick() {
   const R = drawBag('bequick', BE_RXN), an = beAnalyze(R);
   return { topic: 'bequick', tag: R[0].map(([, f]) => F(f)).join(' + '), stem: `<p class="lead">Use bond energies to estimate ΔH.</p>${beEquation(R)}${beDrawings(R)}${beMiniTable(an)}`, tip: 'ΔH ≈ ΣD(bonds broken) − ΣD(bonds formed).', parts: [numPart('Estimate ΔH for this reaction (kJ). Include the sign.', [{ key: 'dh', label: 'ΔH (kJ)', answer: an.dH, show: beSigned(an.dH), diag: beDHdiag(an) }], { hint: 'Count every bond in the reactants (broken) and in the products (formed), times the coefficients. ΔH = ΣD(broken) − ΣD(formed).', solution: `ΣD(broken) = ${beSumTxt(an.br)} = ${an.sb} kJ. ΣD(formed) = ${beSumTxt(an.fo)} = ${an.sf} kJ. ΔH = ${an.sb} − ${an.sf} = <b>${beSigned(an.dH)} kJ</b> (${an.dH < 0 ? 'exothermic' : 'endothermic'}).` })] };
+}
+/* ---------- v20: which structure is more stable? (modeled on OpenStax Ch 7 exercise 67) ---------- */
+const ISO_PAIRS = [['NH2OH', 'H3NO', 'NH₃O (hydroxylamine)'], ['C2H5OH', 'CH3OCH3', 'C₂H₆O'], ['CH3CHO', 'C2H3OH', 'C₂H₄O'], ['HCN', 'HNC', 'HCN'], ['HOCl', 'HClO', 'HOCl']];
+function genIsomer() {
+  const pr = drawBag('isomer', ISO_PAIRS), flip = chance(0.5), [fa, fb] = flip ? [pr[1], pr[0]] : [pr[0], pr[1]];
+  const ta = beSum(beBonds(fa)), tb = beSum(beBonds(fb)), best = ta > tb ? 'A' : 'B';
+  const draw = (f, L) => `<div class="iso-col"><b>Structure ${L}</b>${molSvg(beSpec(f), { unit: 44, maxW: 220, label: 'Structure ' + L })}</div>`;
+  const sumTxt = f => `${beSumTxt(beBonds(f))} = ${beSum(beBonds(f))} kJ`;
+  const sol = `A: ${sumTxt(fa)}. B: ${sumTxt(fb)}. Structure <b>${best}</b> has more total bond energy, so its bonds are stronger and it is the more stable form.`;
+  const ch = choicePart('Which structure is more stable?', [
+    opt('Structure A', best === 'A', best === 'A' ? sol : `Add up every bond energy. B’s total (${tb} kJ) is larger than A’s (${ta} kJ).`, 'iso-total'),
+    opt('Structure B', best === 'B', best === 'B' ? sol : `Add up every bond energy. A’s total (${ta} kJ) is larger than B’s (${tb} kJ).`, 'iso-total'),
+    opt('They are equally stable', false, `Same atoms, different bonds: the totals are ${ta} and ${tb} kJ.`, 'iso-total')], { keep: true, hint: 'Add up the bond energies of every bond in each structure. The structure with the larger total has stronger bonds and is more stable.', solution: sol });
+  const parts = chance(0.5) ? [numPart('Add up the bond energies (every bond) in each structure.', [{ key: 'sa', label: 'ΣD for A (kJ)', answer: ta, diag: () => ['be-arith', 'Count each kind of bond in A, multiply by its D from the table, and add.'] }, { key: 'sb2', label: 'ΣD for B (kJ)', answer: tb, diag: () => ['be-arith', 'Count each kind of bond in B, multiply by its D from the table, and add.'] }], { hint: 'List every bond in each drawing (bonds to H too), look up D for each, and add.', solution: `A: ${sumTxt(fa)}. B: ${sumTxt(fb)}.` }), ch] : [ch];
+  const used = { br: Object.assign({}, beBonds(fa)), fo: beBonds(fb) };
+  return { topic: 'isomer', tag: pr[2], stem: `<p class="lead">Two possible structures for <b>${pr[2]}</b>. Use bond energies to decide which is more stable.</p><div class="iso-row">${draw(fa, 'A')}${draw(fb, 'B')}</div>${beMiniTable(Object.assign({ re: [[1, fa]], pr: [[1, fb]] }, used))}`, tip: 'When the same atoms can be joined two ways, the structure with the stronger bonds (larger total bond energy) is usually the more stable one.', parts };
+}
+/* ---------- v20: bond strength and energy concepts (modeled on OpenStax exercise 64 and Tro test-bank items; original wording) ---------- */
+const BS_GROUPS = [['C–C', 'C=C', 'C≡C'], ['C–N', 'C=N', 'C≡N'], ['C–O', 'C=O', 'C≡O'], ['N–N', 'N=N', 'N≡N'], ['O–O', 'O=O'], ['H–F', 'H–Cl', 'H–Br', 'H–I'], ['C–F', 'C–Cl', 'C–Br', 'C–I'], ['C–H', 'N–H', 'O–H'], ['C–N', 'C–O'], ['C–C', 'C–N', 'C–O']];
+const BS_WHY = g => /[=≡]/.test(g.join('')) ? 'Between the same two atoms, more shared pairs → stronger and shorter: triple > double > single.' : /^H–/.test(g[0]) ? 'Down the halogen group the atoms get bigger, the bond gets longer, and overlap gets weaker.' : /^C–[FClBrI]/.test(g[0]) ? 'Bigger halogen → longer bond → weaker bond.' : 'Look each one up in the bond energy table.';
+const T_BECON = [
+  { q: 'Breaking a covalent bond in a gas-phase molecule is always…', c: [['endothermic: energy must be put in', true, 'D is always positive. Pulling bonded atoms apart takes energy.'], ['exothermic: energy is released', false, 'Energy is released when bonds <b>form</b>, not when they break.'], ['either one, depending on the bond', false, 'Every bond takes energy to break; that is why D is always positive.'], ['neither: no energy change', false, 'Bonded atoms are lower in energy than separate atoms, so breaking takes energy.']] },
+  { q: 'A reaction is most likely to be exothermic when…', c: [['weak bonds are broken and strong bonds are formed', true, 'Little energy goes in, more comes out: ΔH = ΣD(broken) − ΣD(formed) is negative.'], ['strong bonds are broken and weak bonds are formed', false, 'That takes in more energy than it releases: endothermic.'], ['the products have weaker bonds than the reactants', false, 'Weaker product bonds release less energy than it took to break the reactants: endothermic.'], ['no bonds are broken', false, 'Reactions break and form bonds; compare their strengths.']] },
+  { q: 'Why is ΔH calculated from bond energies only an estimate?', c: [['Bond energies are averages over many different molecules', true, 'A C–H bond in CH₄ is not exactly the same as one in CH₃OH, so table values are averages.'], ['Bond energies are negative numbers', false, 'D is always positive.'], ['The method only works for liquids', false, 'Bond energies are for gas-phase molecules.'], ['Coefficients are ignored', false, 'Coefficients are used: multiply each molecule’s bonds by its coefficient.']] },
+  { q: 'For bonds between the same two atoms, which is the strongest and shortest?', c: [['a triple bond', true, 'More shared pairs pull the nuclei closer and hold them tighter: triple > double > single.'], ['a double bond', false, 'A triple bond is stronger and shorter still.'], ['a single bond', false, 'A single bond is the weakest and longest of the three.'], ['they are all the same', false, 'Bond strength and length depend on bond order.']] },
+  { q: 'The bond energy D for a bond is the energy needed to…', c: [['break one mole of that bond in gas-phase molecules', true, 'That is the OpenStax definition (§7.5).'], ['form one mole of that bond in a solid', false, 'D is for breaking bonds, in the gas phase.'], ['break one mole of that bond in a liquid', false, 'D is defined for gas-phase molecules.'], ['remove an electron from the atom', false, 'That is ionization energy.']] },
+  { q: 'Forming 2 mol of H–Cl bonds from separate H and Cl atoms (D for H–Cl = 432 kJ/mol)…', c: [['releases 864 kJ', true, 'Forming bonds releases energy: 2 × 432 = 864 kJ.'], ['absorbs 864 kJ', false, 'Forming bonds releases energy; breaking absorbs it.'], ['releases 432 kJ', false, 'Two moles of bonds: 2 × 432.'], ['absorbs 432 kJ', false, 'Forming bonds releases energy, and there are two moles of bonds.']] }
+];
+function genBEStrong() {
+  if (chance(0.35)) return staticQ('bestrong', Object.assign({ hint: 'Breaking bonds takes energy in; forming bonds gives energy out. ΔH ≈ ΣD(broken) − ΣD(formed).' }, drawBag('becon', T_BECON)));
+  const g = drawBag('bsgroup', BS_GROUPS), most = chance(0.6), pickN = Math.min(g.length, chance(0.5) ? 2 : 4), list = shuffle(g).slice(0, pickN);
+  const vals = list.map(beD), target = most ? Math.max(...vals) : Math.min(...vals), right = list[vals.indexOf(target)];
+  return { topic: 'bestrong', tag: list.join(', '), stem: '', tip: 'Triple > double > single between the same atoms. Smaller atoms → shorter bonds → usually stronger.', parts: [choicePart(`Which bond is the <b>${most ? 'strongest' : 'weakest'}</b>?`, list.map(k => opt(k, k === right, k === right ? `${k}: ${beD(k)} kJ/mol. ${BS_WHY(g)}` : `${k} is ${beD(k)} kJ/mol; ${right} is ${beD(right)} kJ/mol.`, 'bond-strength')), { hint: BS_WHY(g), solution: list.map(k => `${k} ${beD(k)}`).join(', ') + ' kJ/mol (OpenStax Table 7.3).' })] };
+}
+/* ---------- v20: bond order with resonance (average over the equivalent positions) ---------- */
+const RESBO = [
+  { m: () => MOLS.find(x => x.f === 'CO3^2-'), pair: 'C–O', a: 'C', b: 'O', total: 4, n: 3 }, { m: () => MOLS.find(x => x.f === 'NO3^-'), pair: 'N–O', a: 'N', b: 'O', total: 4, n: 3 },
+  { m: () => MOLS.find(x => x.f === 'NO2^-'), pair: 'N–O', a: 'N', b: 'O', total: 3, n: 2 }, { m: () => MOLS.find(x => x.f === 'O3'), pair: 'O–O', a: 'O', b: 'O', total: 3, n: 2, note: 'central O to the end O atoms' },
+  { m: () => ({ f: 'HCO2^-', c: 'C', o: ['O', 'O', 'H'], ord: [2, 1, 1], lp: [0, 2, 3, 0], q: -1, res: true }), pair: 'C–O', a: 'C', b: 'O', total: 3, n: 2, name: 'formate ion' },
+  { benzene: true, pair: 'C–C', a: 'C', b: 'C', total: 9, n: 6, name: 'benzene' }
+];
+const fracTxt = (t, n) => { const g = (x, y) => y ? g(y, x % y) : x, d = g(t, n); return n / d === 1 ? String(t / d) : `${t / d}/${n / d}`; };
+function genResBO() {
+  const R = drawBag('resbo', RESBO), bo = R.total / R.n, ft = fracTxt(R.total, R.n), show = Number.isInteger(bo) ? String(bo) : `${ft} ≈ ${(Math.round(bo * 100) / 100)}`;
+  const M = R.benzene ? null : R.m(), f = R.benzene ? 'C6H6' : M.f, nm = R.name ? `${R.name}, ${F(f)}` : F(f);
+  const stem = R.benzene ? `<p class="lead">One resonance structure of benzene, C<sub>6</sub>H<sub>6</sub></p><div class="figure">${molSvg(multiSpec(MULTI.find(x => x.f === 'C6H6')), { label: 'One resonance structure of benzene' })}</div>` : lewisStem(M);
+  const what = R.benzene ? 'carbon–carbon bonds in the ring' : `${R.a}–${R.b} bonds${R.note ? ` (${R.note})` : ''}`;
+  const p1 = numPart(`In ${nm}, the ${what} are all equivalent. Find their average bond order.`, [
+    { key: 'tb', label: `Total bonds in the ${R.pair} positions (one structure)`, answer: R.total, diag: v => v === R.n ? ['res-count', `Count a double bond as 2. In this structure: ${R.benzene ? '3 double + 3 single' : `one double + ${R.n - 1} single`} = ${R.total}.`] : ['res-count', 'Add up the bonds (single = 1, double = 2) between the atoms in question in the structure shown.'] },
+    { key: 'np', label: `Number of ${R.pair} positions`, answer: R.n, diag: () => ['res-count', `Count how many ${R.pair} bonds there are${R.benzene ? ' around the ring' : ''}.`] },
+    { key: 'bo', label: `Average ${R.pair} bond order`, answer: bo, tol: 0.011, show, diag: v => v === 2 ? ['res-one-structure', 'That is the double bond in one structure. In the real ion the π bond is spread over every position, so each bond is in between.'] : v === 1 ? ['res-one-structure', 'That is one of the single bonds in one structure. The π electrons are shared over every position.'] : v === R.total ? ['res-divide', 'Divide the total bonds by the number of positions.'] : ['res-divide', `Bond order = total bonds ÷ positions = ${R.total} ÷ ${R.n}.`] }], { hint: 'Average bond order = (total bonds between those atoms in one structure) ÷ (number of equivalent positions). A double bond counts as 2.', solution: `${R.total} bonds over ${R.n} positions → bond order = ${R.total}/${R.n} = <b>${show}</b>.` });
+  const parts = [p1];
+  if (chance(0.5)) parts.push(choicePart(`How does each ${R.pair} bond in ${F(f)} compare with a typical ${R.a}–${R.b} single bond and ${R.a}=${R.b} double bond?`, [
+    opt('All equal, and in between: shorter and stronger than the single bond, longer and weaker than the double bond', true, `Bond order ${show} sits between 1 and 2, so the length and strength are in between too. Experiments find all the ${R.pair} bonds the same length.`),
+    opt('One short double bond and the rest longer single bonds', false, 'That is one resonance structure on paper. The real structure is the average: every bond is the same.', 'res-one-structure'),
+    opt('All are single bonds', false, `The π electrons are shared over all positions, so each bond is more than a single bond (order ${show}).`, 'res-one-structure'),
+    opt('All are double bonds', false, `There is only ${R.benzene ? 'three π bonds for six positions' : 'one π bond'} to share, so each is less than a double bond (order ${show}).`, 'res-one-structure')], { hint: 'Bond order between 1 and 2 → length and strength between a single and a double bond.', solution: `All ${R.pair} bonds are identical, with bond order ${show}: between a single and a double bond.` }));
+  return { topic: 'resbo', tag: F(f), stem, tip: 'Resonance spreads a π bond over several positions. Average bond order = total bonds ÷ positions.', parts };
 }
 function genStrength() { const it = drawBag('t1str', T1_STRENGTH)(); return staticQ('strength', Object.assign({ tip: 'More overlap → stronger bond. In a series of similar bonds (H–Cl, H–Br, H–I), the shorter one overlaps better. A π bond is weaker than a σ bond.' }, it)); }
 
@@ -2165,6 +2252,8 @@ const TOPICS = {
   strength: { label: 'Why bond strengths differ', tile: 't1', gen: genStrength, video: 'hyb' },
   bondenergy: { label: 'Bond energies → ΔH (§7.5)', tile: 't1', gen: genBondEnergy, video: 'thermo' },
   bequick: { label: 'Quick ΔH from bond energies', tile: 't1', gen: genBEQuick, video: 'thermo' },
+  isomer: { label: 'Which structure is more stable?', tile: 't1', gen: genIsomer, video: 'thermo' },
+  bestrong: { label: 'Bond strength & energy concepts', tile: 't1', gen: genBEStrong, video: 'thermo' },
   why: { label: 'Why hybridize?', tile: 't2', gen: genWhy, video: 'hyb' },
   table: { label: 'Hybrid table', tile: 't2', gen: genTable, video: 'hyb' },
   groups: { label: 'Hybridize the center', tile: 't2', gen: genGroups, video: 'vsepr' },
@@ -2187,6 +2276,7 @@ const TOPICS = {
   pisource: { label: 'Where π bonds come from', tile: 't3', gen: genPisource, video: 'hyb' },
   rotation: { label: 'Restricted rotation', tile: 't3', gen: genRotation, video: 'hyb' },
   resonance: { label: 'Resonance & delocalized π', tile: 't3', gen: genResonance, video: 'hyb' },
+  resbo: { label: 'Bond order with resonance', tile: 't3', gen: genResBO, video: 'hyb' },
   boss: { label: 'Boss molecules', tile: 't3', gen: genBoss, video: 'hyb', badge: 'challenge' },
   lcao: { label: 'LCAO pictures', tile: 't4', gen: genLcao, video: 'mo1' },
   ordering: { label: 'Which ordering?', tile: 't4', gen: genOrdering, video: 'mo2' },
@@ -2202,11 +2292,11 @@ const TOPICS = {
   o2magnet: { label: 'O₂ and the magnet', tile: 't4', gen: genO2Magnet, video: 'mo2' }
 };
 const TILES = [
-  { id: 't1', title: 'Overlap Basics', blurb: 'What makes a bond. σ vs π overlap. Bond energies → ΔH.', sec: '§7.5, §8.1', topics: ['whatbond', 'pecurve', 'gallery', 'which', 'strength', 'bondenergy', 'bequick'],
+  { id: 't1', title: 'Overlap Basics', blurb: 'What makes a bond. σ vs π overlap. Bond energies → ΔH.', sec: '§7.5, §8.1', topics: ['whatbond', 'pecurve', 'gallery', 'which', 'strength', 'bondenergy', 'bequick', 'isomer', 'bestrong'],
     ideas: ['A covalent bond = two <b>half-filled</b> orbitals overlapping. The shared pair sits between the nuclei.', 'Bond length = distance at the lowest energy. Bond energy = depth of the energy well (H₂: 74 pm, 436 kJ/mol).', 'Head-on overlap → <b>σ</b> (density on the axis). Side-by-side p overlap → <b>π</b> (above and below).', 'More overlap → stronger bond. In a series of similar bonds (H–Cl, H–Br, H–I), shorter bonds overlap better; a π bond is weaker than a σ bond (OpenStax Table 8.1).'] },
   { id: 't2', title: 'Hybrid Workshop', blurb: 'sp, sp², sp³: groups → hybrids → shape.', sec: '§8.2', topics: ['why', 'table', 'groups', 'angle', 'reverse', 'howmany', 'atomshape', 'boxes', 'bondtype', 'mixer', 'tagger', 'termhyb', 'expanded'],
     ideas: ['Electron groups = bonded atoms + lone pairs. A double or triple bond is <b>one</b> group.', 'Groups = hybrids: 2 → sp (180°), 3 → sp² (120°), 4 → sp³ (109.5°). Lone pairs sit in hybrids too.', 'n atomic orbitals in = n hybrids out. H is never hybridized.'] },
-  { id: 't3', title: 'Sigma & Pi', blurb: 'Count σ/π, label overlaps, rotation.', sec: '§8.3', topics: ['studio', 'count', 'skelcount', 'label', 'bonddesc', 'labeler', 'pisource', 'rotation', 'resonance', 'boss'],
+  { id: 't3', title: 'Sigma & Pi', blurb: 'Count σ/π, label overlaps, rotation.', sec: '§8.3', topics: ['studio', 'count', 'skelcount', 'label', 'bonddesc', 'labeler', 'pisource', 'rotation', 'resonance', 'resbo', 'boss'],
     ideas: ['Single = 1σ. Double = 1σ + 1π. Triple = 1σ + 2π.', 'σ bonds use hybrids (or H 1s). π bonds use leftover <b>unhybridized p</b> orbitals.', 'A π bond blocks rotation. Resonance spreads π electrons over several atoms.', 'Line drawings hide the H atoms on carbon, but every C–H is still a σ bond.'] },
   { id: 't4', title: 'MO Builder', blurb: 'Fill MO diagrams, bond order, magnetism.', sec: '§8.4', topics: ['lcao', 'ordering', 'moorder', 'builder', 'read', 'paralist', 'trends', 'ranker', 'ionize', 'moconcept', 'theory', 'o2magnet'],
     ideas: ['In phase → bonding MO. Out of phase → antibonding MO* (node between the nuclei).', 'Li₂–N₂: π2p below σ2p. O₂–Ne₂: σ2p below π2p. Count valence electrons and adjust for charge.', 'BO = ½ (bonding − antibonding). Higher BO → shorter, stronger bond. Any unpaired electron → paramagnetic.'] }
@@ -2230,7 +2320,7 @@ const TOPIC_HINT = {
 };
 const generate = t => { const q = (TOPICS[t] ? TOPICS[t].gen : SC_GEN[t])(); q.topic = q.topic || t; q.parts.forEach(p => { if (!p.hint && TOPIC_HINT[q.topic]) p.hint = TOPIC_HINT[q.topic]; }); return q; };
 /* Daily 5 tiers: 2 easy → 2 medium → 1 hard */
-const TIER = { easy: ['whatbond', 'gallery', 'which', 'why', 'table', 'reverse', 'pisource', 'rotation', 'lcao', 'ordering', 'theory', 'moconcept'], medium: ['pecurve', 'strength', 'groups', 'angle', 'howmany', 'atomshape', 'paralist', 'moorder', 'boxes', 'bondtype', 'mixer', 'count', 'skelcount', 'label', 'termhyb', 'bonddesc', 'bequick', 'resonance', 'read', 'trends', 'ranker'], hard: ['studio', 'bondenergy', 'tagger', 'labeler', 'builder', 'ionize', 'boss', 'o2magnet'] };
+const TIER = { easy: ['bestrong', 'whatbond', 'gallery', 'which', 'why', 'table', 'reverse', 'pisource', 'rotation', 'lcao', 'ordering', 'theory', 'moconcept'], medium: ['pecurve', 'strength', 'groups', 'angle', 'howmany', 'atomshape', 'paralist', 'moorder', 'boxes', 'bondtype', 'mixer', 'count', 'skelcount', 'label', 'termhyb', 'bonddesc', 'bequick', 'isomer', 'resbo', 'resonance', 'read', 'trends', 'ranker'], hard: ['studio', 'bondenergy', 'tagger', 'labeler', 'builder', 'ionize', 'boss', 'o2magnet'] };
 if (typeof module !== 'undefined') module.exports = { boxBank, checkRoles, checkBondType, genBondType, refDiagram, checkMixer, checkRank, genSCHyb, genSCAtom, genSCBO, normHyb, TIER, OPTS, parseSmi, layoutComp, skelInfo, SKEL, BOSS, checkLabeler, checkTapcurve, MOLS, MULTI, info, electronsOK, multiSpec, sigmaPi, moAnalyze, moLevels, moFill, aoFill, checkMO, checkAO, checkBoxes, BOXCASES, TOPICS, TILES, generate, ANGLE, scSpec, molSvg, MO_SPECIES, lpAngles };
 /*LOGIC-END*/
 </script>
@@ -2559,7 +2649,7 @@ function checkCurrent() {
       if (!raw) { blank = true; return; }
       if (/^\d+,\d+$/.test(raw) && !/^\d{1,3}(,\d{3})+$/.test(raw)) { comma = true; return; }
       const v = parseNum(raw); if (!Number.isFinite(v)) { notNum = true; box.classList.remove('good', 'bad'); return; }
-      const ok = Math.abs(v - f.answer) < 1e-6;
+      const ok = Math.abs(v - f.answer) < (f.tol || 1e-6);
       box.classList.toggle('good', ok); box.classList.toggle('bad', !ok);
       if (!ok) { const d = Number.isFinite(v) && f.diag ? f.diag(v) : ['format', 'Type a number.']; if (!slip) slip = d[0]; msgs.push(`<b>${f.label}:</b> ${d[1]}`); }
     });
@@ -2612,7 +2702,7 @@ function wrong(slip, why) {
 /* what the student entered for this step (typed and choice steps only), for the missed-step box */
 function givenText(p) {
   try {
-    if (p.kind === 'nums') return p.fields.map(f => { const el = $('in-' + f.key), v = el ? el.value.trim() : '', ok = v && Math.abs(parseNum(v) - f.answer) < 1e-6; return `${f.label}: ${!v ? '—' : ok ? esc(v) + ' ✓' : '<s>' + esc(v) + '</s>'}`; }).join(' · ');
+    if (p.kind === 'nums') return p.fields.map(f => { const el = $('in-' + f.key), v = el ? el.value.trim() : '', ok = v && Math.abs(parseNum(v) - f.answer) < (f.tol || 1e-6); return `${f.label}: ${!v ? '—' : ok ? esc(v) + ' ✓' : '<s>' + esc(v) + '</s>'}`; }).join(' · ');
     if (p.kind === 'text') { const el = $('in-t'); return el ? '<s>' + esc(el.value.trim()) + '</s>' : ''; }
     if (p.kind === 'choice') { const b = document.querySelector('#parts .part.current .choice.wrong'); return b ? '<s>' + b.innerHTML + '</s>' : ''; }
   } catch (e) {}
