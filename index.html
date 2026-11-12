@@ -1630,7 +1630,7 @@ const T_THEORY = [
   { q: 'Which theory would you use to compare the bond strength of N₂ and N₂⁺?', ok: 0, why: ['', 'Lewis/VB structures have no simple way to give a fractional bond order like 2.5 for N₂⁺. MO bond order does it directly: 3 vs 2.5.', 'VSEPR predicts shapes, not bond strengths.', 'VB has no good way to describe N₂⁺. MO bond order does it directly.'] },
   { q: 'Which theory would you use to <b>name the orbitals</b> that overlap in a C–H bond of CH₄?', ok: 1, why: ['MO theory spreads orbitals over the whole molecule; it doesn’t name one atom’s orbital in one bond.', '', 'VSEPR gives the shape but not the orbitals.', 'This is VB language: C sp³ – H 1s. MO theory doesn’t describe single localized bonds this way.'] },
   { q: 'Which theory describes the three identical C–O bonds of CO₃²⁻ in <b>one</b> picture, without resonance structures?', ok: 0, why: ['', 'VB needs several resonance structures to show the delocalized π electrons.', 'VSEPR only gives the trigonal planar shape.', 'VB needs resonance drawings; only MO uses one set of delocalized π orbitals.'] },
-  { q: 'Which theory can explain why <b>He₂</b> does not form?', ok: 3, why: ['MO theory does (bond order 0), but so does VB theory (no half-filled orbital on He).', 'VB theory does (He has no half-filled orbital), but MO theory does too (bond order 0).', 'VSEPR needs a molecule to exist first; it predicts shapes, not whether bonds form.', ''] }
+  { q: 'Which theory shows that <b>He₂</b> has a <b>bond order of 0</b> (as many antibonding electrons as bonding), so it does not form?', ok: 0, why: ['', 'VB theory does not count bonding and antibonding electrons; bond order from an MO diagram is an MO idea.', 'VSEPR predicts shapes, not whether a bond forms.', 'Bond order from bonding vs antibonding electrons is MO theory only (VB has no antibonding orbitals).'] }
 ];
 function genTheory() { const it = drawBag('theory', T_THEORY); return { topic: 'theory', tag: 'which theory?', stem: '', tip: 'Shape → VSEPR. Which orbitals overlap → VB (hybrids). Magnetism, bond order of ions, delocalized π → MO.', parts: [choicePart(it.q, THEORY_OPTS.map((t, i) => opt(t, i === it.ok, i === it.ok ? 'Right tool for the job.' : it.why[i], 'theory-choice')), { keep: true, hint: 'Shape → VSEPR. Overlap names → VB. Magnetism and bond order → MO.', solution: THEORY_OPTS[it.ok] + '.' })] }; }
 /* typed answers (Skill Check Prep): no multiple choice */
@@ -2211,7 +2211,7 @@ function initWork(p) {
 function newQuestion(focus) {
   state.scratch = null;
   const q = makeQuestion();
-  Object.assign(state, { q, pi: 0, wrong: false, revealed: false, helped: false, done: false, logged: false, aoDone: null });
+  Object.assign(state, { q, pi: 0, wrong: false, revealed: false, helped: false, done: false, logged: false, aoDone: null, missed: [] });
   state.work = initWork(q.parts[0]);
   $('emptyBox').hidden = true; $('learnBox').hidden = true; $('reportBox').hidden = true; $('playArea').hidden = false; $('skipBtn').hidden = false;
   const T = TOPICS[q.topic], tile = TILES.find(t => t.id === T.tile);
@@ -2372,7 +2372,7 @@ function wrong(slip, why) {
   const p = state.q.parts[state.pi];
   if (!state.wrong) { state.wrong = true; ddLog(false, slip); if (P.streak) { P.streak = 0; save(); renderStats(); } }
   setMood('oops', 2200);
-  if (strict()) { setFeedback('bad', `<b>Not quite.</b> ${why || ''}<div class="sol">Answer: <b>${answerText(p)}</b>. ${p.solution || ''}</div>`); advancePart(true); return; }
+  if (strict()) { state.missed.push(state.pi + 1); setFeedback('bad', `<b>Not quite.</b> ${why || ''}<div class="sol">Answer: <b>${answerText(p)}</b>. ${p.solution || ''}</div>`); advancePart(true); return; }
   state.tries = (state.tries || 0) + 1;
   setFeedback('bad', `<b>Not quite.</b> ${why || 'Check that step and try again.'}${state.tries >= 2 ? '<br>Stuck? Try <b>Hint</b> or <b>Show step</b>.' : ''}`);
   if (state.tries >= 2) $('solBtn').classList.add('pulse');
@@ -2402,8 +2402,8 @@ function finishQuestion() {
   let xp = state.revealed ? 2 : 10 + (state.helped ? 0 : 5);
   if (ok) { P.correct++; P.streak++; P.best = Math.max(P.best, P.streak); xp = 15 + (state.helped ? 0 : 5) + 2 * Math.min(P.streak, 5); }
   P.xp += xp;
-  if (state.ch) state.ch.results.push({ topic: q.topic, tag: q.tag, ok });
-  setFeedback(ok ? 'good' : 'info', ok ? `<b>${pick(['All steps right!', 'Nailed it!', 'Great bonding!', 'Perfect overlap!'])}</b> <span class="xp-pop">+${xp} XP</span> The worked steps are above.` : `<b>Done.</b> <span class="xp-pop">+${xp} XP</span> Check the worked steps above${strict() ? '.' : ', then try another one like it to lock it in.'}`);
+  if (state.ch) state.ch.results.push({ topic: q.topic, tag: q.tag, ok, steps: q.parts.length, missed: (state.missed || []).slice() });
+  setFeedback(ok ? 'good' : 'info', ok ? `<b>${pick(['All steps right!', 'Nailed it!', 'Great bonding!', 'Perfect overlap!'])}</b> <span class="xp-pop">+${xp} XP</span> The worked steps are above.` : `<b>Done.</b> <span class="xp-pop">+${xp} XP</span> ${strict() && q.parts.length > 1 && state.missed.length ? `Every step has to be right for the question to count, and step ${state.missed.join(' and ')} of ${q.parts.length} was missed. ` : ''}Check the worked steps above${strict() ? '.' : ', then try another one like it to lock it in.'}`);
   if (ok) setMood(P.streak && P.streak % 5 === 0 ? 'victory' : 'correct');
   $('nextBtn').hidden = false; $('nextBtn').innerHTML = (state.ch && state.ch.i === state.ch.plan.length - 1 ? 'See my results ' : 'Next question ') + ico('arrow');
   if (!coarse()) try { $('nextBtn').focus({ preventScroll: true }); } catch (e) {}
@@ -2543,7 +2543,7 @@ function showReport() {
   const missed = [...new Set(z.results.filter(r => !r.ok).map(r => r.topic))];
   $('playArea').hidden = true; $('skipBtn').hidden = true; const box = $('reportBox'); box.hidden = false;
   box.innerHTML = `<span class="ex-label">${R.title} results</span><div class="report-score"><b>${score} / ${n}</b><span>${z.kind === 'faceoff' ? (score >= 5 ? 'Face-Off Champion! You know which theory to use.' : 'Good fight. Review the theories below.') : frac >= 0.9 ? 'Excellent. You’re ready!' : frac >= 0.7 ? 'Solid. Polish the topics below.' : 'Good practice. Work on the topics below.'}</span></div>${extra}
-   <ul class="report-list">${z.results.map((r, i) => `<li class="${r.ok ? 'ok' : ''}">${r.ok ? '✓' : '✗'} ${i + 1}. ${topicLabel(r.topic)}${r.tag ? ' · ' + r.tag : ''}</li>`).join('')}</ul>
+   ${z.results.some(r => r.steps > 1) ? '<p class="typing-note" style="margin:0 0 6px">A question counts only when every step is right.</p>' : ''}<ul class="report-list">${z.results.map((r, i) => `<li class="${r.ok ? 'ok' : ''}">${r.ok ? '✓' : '✗'} ${i + 1}. ${topicLabel(r.topic)}${r.tag ? ' · ' + r.tag : ''}${!r.ok && r.steps > 1 && r.missed && r.missed.length ? ` <small>(${r.steps - r.missed.length} of ${r.steps} steps right; missed step ${r.missed.join(', ')})</small>` : ''}</li>`).join('')}</ul>
    ${missed.length ? `<p><b>Study plan:</b> practice these next.</p><div class="ex-actions"><button type="button" class="btn primary" id="practiceMissed">Practice my missed topics ${ico('arrow')}</button></div>` : '<p>No misses. Try another round!</p>'}
    <div class="ex-actions"><button type="button" class="btn" id="chAgain">${R.again}</button></div>`;
   const kind = z.kind; state.ch = null; renderChooser();
