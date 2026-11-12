@@ -1989,7 +1989,7 @@ const ROUND = {
   faceoff: { title: 'Theory Face-Off', strict: true, again: 'Face-Off again' }
 };
 const FACEOFF_PLAN = ['o2magnet', 'theory', 'theory', 'ranker', 'theory', 'ionize'];
-const SKILL_PLAN = ['count', 'skelcount', 'count', 'scBO', 'scBO', 'scBO', 'scHyb', 'scHyb', 'scAtom', 'scAtom'];
+const SKILL_PLAN = ['count', 'skelcount', 'howmany', 'reverse', 'scBO', 'scBO', 'scHyb', 'scHyb', 'scAtom', 'scAtom'];
 const SC_LABEL = { scHyb: 'Typed: hybridization', scAtom: 'Typed: atom hybridization', scBO: 'Typed: bond order' };
 const topicLabel = t => TOPICS[t] ? TOPICS[t].label : SC_LABEL[t] || t;
 const STREAK_KEY = 'itsdrdan-daily-streak', dayKey = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -1997,7 +1997,7 @@ const today = () => dayKey(new Date()), yesterday = () => { const d = new Date()
 function sharedStreak() { let s = {}; try { s = JSON.parse(localStorage.getItem(STREAK_KEY) || '{}') || {}; } catch (e) {} if (s.last && s.last !== today() && s.last !== yesterday()) return Object.assign({}, s, { streak: 0 }); return Object.assign({ streak: 0, best: 0 }, s); }
 function sharedStreakDone() { const s = sharedStreak(); if (s.last === today()) return s; s.streak = s.last === yesterday() ? (s.streak || 0) + 1 : 1; s.last = today(); s.best = Math.max(s.best || 0, s.streak); s.days = Object.assign({}, s.days, { [today()]: 1 }); const keep = Object.keys(s.days).sort().slice(-60); s.days = Object.fromEntries(keep.map(k => [k, 1])); try { localStorage.setItem(STREAK_KEY, JSON.stringify(s)); } catch (e) {} return s; }
 const faceoffOpen = () => tileC(P, 't2') >= 5 && tileC(P, 't4') >= 5;
-const CH_PLAN = ['howmany', 'atomshape', 'paralist', 'moorder', 'which', 'gallery', 'strength', 'skelcount', 'boss', 'groups', 'angle', 'boxes', 'tagger', 'count', 'label', 'builder', 'ionize', 'trends', 'read', 'resonance', 'pecurve'];
+const CH_PER_TILE = { t1: 2, t2: 3, t3: 3, t4: 2 };
 
 /* mascot: a p orbital (blue and coral lobes, node at the waist) */
 /* art: use the game's own files in assets/ when they exist (see ASSETS.md); otherwise fall back to the drawings and brand badges */
@@ -2073,7 +2073,10 @@ function afterSelect() { if (state.mode === 'challenge') state.mode = 'practice'
 function startRound(kind) {
   if (kind === 'faceoff' && !faceoffOpen()) { toast('trophy', 'Theory Face-Off is locked', 'Get 5 right in Hybrid Workshop and 5 in MO Builder first.'); return; }
   let plan;
-  if (kind === 'challenge') plan = shuffle(CH_PLAN).slice(0, 10);
+  if (kind === 'challenge') {
+    /* every tile appears: 2 Overlap Basics, 3 Hybrid Workshop, 3 Sigma & Pi, 2 MO Builder; any topic in a tile can come up (sp3d/sp3d2 only if that topic is on) */
+    plan = shuffle(TILES.flatMap(T => shuffle(T.topics.filter(t => t !== 'expanded' || state.sel.has('expanded'))).slice(0, CH_PER_TILE[T.id])));
+  }
   if (kind === 'skill') plan = shuffle(SKILL_PLAN);
   if (kind === 'faceoff') plan = FACEOFF_PLAN.slice();
   if (kind === 'daily') { const pickN = (list, n) => { const out = []; let pool = list.filter(t => t !== 'boss' || state.sel.has('boss')); while (out.length < n && pool.length) { const t = weightedTopic(pool); out.push(t); pool = pool.filter(x => x !== t); } return out; }; plan = [...pickN(TIER.easy, 2), ...pickN(TIER.medium, 2), ...pickN(TIER.hard, 1)]; }
