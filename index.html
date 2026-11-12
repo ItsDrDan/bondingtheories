@@ -1772,7 +1772,7 @@ const ORB_TXT = { s: 's', px: 'px', py: 'py', pz: 'pz', sp: 'sp', sp2: 'sp2', sp
 const HYB_N = { sp: 2, sp2: 3, sp3: 4 };
 /* each molecule: atoms [el, x, y, z], bonds [a, b, order], lone-pair directions for hybrid lone pairs, accepted orbital sets for non-H atoms */
 const STUDIO = [
-  { f: 'H2', atoms: [['H', -0.55, 0, 0], ['H', 0.55, 0, 0]], bonds: [[0, 1, 1]], sets: {} },
+  { f: 'H2', atoms: [['H', -0.4, 0, 0], ['H', 0.4, 0, 0]], bonds: [[0, 1, 1]], sets: {} },
   { f: 'HF', atoms: [['H', -0.6, 0, 0], ['F', 0.6, 0, 0]], bonds: [[0, 1, 1]], sets: { 1: [['px']] } },
   { f: 'HCl', atoms: [['H', -0.65, 0, 0], ['Cl', 0.65, 0, 0]], bonds: [[0, 1, 1]], sets: { 1: [['px']] } },
   { f: 'F2', atoms: [['F', -0.65, 0, 0], ['F', 0.65, 0, 0]], bonds: [[0, 1, 1]], sets: { 0: [['px']], 1: [['px']] } },
@@ -1802,14 +1802,50 @@ function stLobe(cx, cy, d, len, wid, fill, stroke, off = 0) {
   return { z: d[2], svg: `<ellipse cx="${mx.toFixed(1)}" cy="${my.toFixed(1)}" rx="${L.toFixed(1)}" ry="${wid}" transform="rotate(${ang.toFixed(1)} ${mx.toFixed(1)} ${my.toFixed(1)})" fill="${fill}" fill-opacity=".72" stroke="${stroke}" stroke-width="1.8"/>` };
 }
 const BLUE = ['#8fb8f0', '#346cc3'], CORAL = ['#f6a99a', '#bf5266'];
-function stOrbitalSvg(M, i, o, P) {
-  const c = P[i], out = [];
-  if (o === 's') out.push({ z: 0, svg: `<circle cx="${c.x}" cy="${c.y}" r="21" fill="${BLUE[0]}" fill-opacity=".72" stroke="${BLUE[1]}" stroke-width="1.8"/>` });
-  else if (ORB_DIR[o]) { const d = ORB_DIR[o]; out.push(stLobe(c.x, c.y, d, 26, 13, ...BLUE, 2), stLobe(c.x, c.y, d.map(v => -v), 26, 13, ...CORAL, 2)); }
+/* σ overlap: a lobe (hybrid or p) that points at a bonded partner stretches until it overlaps that partner's lobe or 1s sphere.
+   Orbitals that don't point at the partner stay short, so a wrong choice shows a visible gap. */
+const stDot = (u, v) => u[0] * v[0] + u[1] * v[1] + u[2] * v[2];
+function stToward(M, sets, i, j) {
+  const set = sets[i] || [], d = stUnit(M.atoms[i], M.atoms[j]);
+  if (set.some(o => HYB_N[o] && stHybDirs(M, i, o).dirs.some(v => stDot(v, d) > 0.97))) return 'lobe';
+  if (set.some(o => ORB_DIR[o] && Math.abs(stDot(ORB_DIR[o], d)) > 0.97)) return 'lobe';
+  if (set.includes('s')) return 's';
+  return null;
+}
+function stReach(M, P, sets) {
+  const R = M.atoms.map(() => ({}));
+  M.bonds.forEach(([a, b]) => {
+    const D = Math.hypot(P[a].x - P[b].x, P[a].y - P[b].y), ka = stToward(M, sets, a, b), kb = stToward(M, sets, b, a);
+    if (!ka || !kb) return;
+    let ra, rb;
+    if (ka === 's' && kb === 's') ra = rb = D / 2 + 9;
+    else if (ka === 's') { ra = 24; rb = D - 24 + 14; }
+    else if (kb === 's') { rb = 24; ra = D - 24 + 14; }
+    else ra = rb = D / 2 + 9;
+    R[a][b] = ra; R[b][a] = rb;
+  });
+  return R;
+}
+/* a lobe of a given tip length (px) along a 3D direction */
+function stLobeTo(cx, cy, d, tip, wid, fill, stroke) {
+  const p = stDir(d), L = tip / 2, ang = Math.atan2(p.uy, p.ux) * 180 / Math.PI, mx = cx + p.ux * L, my = cy + p.uy * L;
+  return { z: d[2], svg: `<ellipse cx="${mx.toFixed(1)}" cy="${my.toFixed(1)}" rx="${L.toFixed(1)}" ry="${wid}" transform="rotate(${ang.toFixed(1)} ${mx.toFixed(1)} ${my.toFixed(1)})" fill="${fill}" fill-opacity=".72" stroke="${stroke}" stroke-width="1.8"/>` };
+}
+function stOrbitalSvg(M, i, o, P, R = {}) {
+  const c = P[i], out = [], reach = R[i] || {}, nbs = stNeighbors(M, i);
+  const partnerAlong = d => nbs.find(j => reach[j] && stDot(d, stUnit(M.atoms[i], M.atoms[j])) > 0.97);
+  if (o === 's') { const r = Math.max(21, ...nbs.map(j => reach[j] || 0)); out.push({ z: 0, svg: `<circle cx="${c.x}" cy="${c.y}" r="${r.toFixed(1)}" fill="${BLUE[0]}" fill-opacity="${r > 30 ? '.5' : '.72'}" stroke="${BLUE[1]}" stroke-width="1.8"/>` }); }
+  else if (ORB_DIR[o]) {
+    const d = ORB_DIR[o];
+    /* σ: the lobe facing the partner is drawn in the same (blue) phase as the partner's lobe, so the overlap is in phase */
+    const neg = d.map(v => -v), flip = partnerAlong(d) == null && partnerAlong(neg) != null;
+    [[d, flip ? CORAL : BLUE], [neg, flip ? BLUE : CORAL]].forEach(([dd, col]) => { const j = partnerAlong(dd); out.push(j != null ? stLobeTo(c.x, c.y, dd, reach[j], 13, ...BLUE) : stLobe(c.x, c.y, dd, 26, 13, ...col, 2)); });
+  }
   else {
     const H = stHybDirs(M, i, o);
     H.dirs.forEach((d, k) => {
-      out.push(stLobe(c.x, c.y, d.map(v => -v), 8, 7, ...CORAL, 0), stLobe(c.x, c.y, d, 30, 14, ...BLUE, 0));
+      const j = H.lp[k] ? null : partnerAlong(d);
+      out.push(stLobe(c.x, c.y, d.map(v => -v), 8, 7, ...CORAL, 0), j != null ? stLobeTo(c.x, c.y, d, reach[j], 14, ...BLUE) : stLobe(c.x, c.y, d, 30, 14, ...BLUE, 0));
       if (H.lp[k]) { const p = stDir(d), L = 30 * Math.max(p.l, 0.42), tx = c.x + p.ux * L * 1.5, ty = c.y + p.uy * L * 1.5; out.push({ z: d[2] + 0.01, svg: `<circle cx="${(tx - p.uy * 4).toFixed(1)}" cy="${(ty + p.ux * 4).toFixed(1)}" r="2.6" fill="#1f2a44"/><circle cx="${(tx + p.uy * 4).toFixed(1)}" cy="${(ty - p.ux * 4).toFixed(1)}" r="2.6" fill="#1f2a44"/>` }); }
     });
   }
@@ -1855,15 +1891,14 @@ function studioSvg(M, w, o = {}) {
   /* bonds as thin lines */
   M.bonds.forEach(([a, b]) => { back += `<line x1="${P[a].x}" y1="${P[a].y}" x2="${P[b].x}" y2="${P[b].y}" stroke="#b9bfd3" stroke-width="2"/>`; });
   /* orbitals placed (or the answer) */
-  M.atoms.forEach((_, i) => { (w.sets[i] || []).forEach(orb => { lobes = lobes.concat(stOrbitalSvg(M, i, orb, P)); }); });
+  const R = stReach(M, P, w.sets);
+  M.atoms.forEach((_, i) => { (w.sets[i] || []).forEach(orb => { lobes = lobes.concat(stOrbitalSvg(M, i, orb, P, R)); }); });
   lobes.sort((p, q) => p.z - q.z);
   let arcs = '', top = '';
   if (!o.overlaps) {
     M.bonds.forEach(([a, b, ord]) => { if (ord < 2) return; ['py', 'pz'].forEach(ax => { if ((w.sets[a] || []).includes(ax) && (w.sets[b] || []).includes(ax)) arcs += stPiArc(P[a], P[b], ax, false); }); });
-    M.atoms.forEach((_, i) => { const st = w.sets[i] || []; if (st.includes('py') && st.includes('pz')) top += stRightAngle(P[i]); });
   }
   /* overlaps (step 2): glow + number */
-  if (o.overlaps) M.atoms.forEach((_, i) => { const st = w.sets[i] || []; if (st.includes('py') && st.includes('pz')) top += stRightAngle(P[i]); });
   if (o.overlaps) o.overlaps.forEach((ov, k) => {
     const A = P[ov.a], B = P[ov.b], mx = (A.x + B.x) / 2, my = (A.y + B.y) / 2, mark = o.marks && o.marks[k];
     let pts;
@@ -1903,6 +1938,18 @@ function stCheck(M, sets) {
   });
   return msgs.length ? { ok: false, slip, why: msgs.join('<br>'), bad } : { ok: true };
 }
+/* step 3: an angle question (the drawing no longer labels the angles) */
+const ST_ANG = ['90°', '109.5°', '120°', '180°'];
+function stAnglePart(M) {
+  const set = Object.values(M.sets).map(x => x[0]), hasTriple = M.bonds.some(b => b[2] === 3), hyb = (set.find(s => s.some(x => HYB_N[x])) || []).find(x => HYB_N[x]);
+  const why = (ans, a, reasons) => a === ans ? reasons.ok : reasons[a] || `${a} goes with ${{ '180°': 'sp (2 groups)', '120°': 'sp² (3 groups)', '109.5°': 'sp³ (4 groups)', '90°': 'perpendicular orbitals' }[a]}, not this pair.`;
+  const make = (ask, ans, reasons, sol) => choicePart(ask, ST_ANG.map(a => opt(a, a === ans, why(ans, a, reasons), a === ans ? '' : 'orbital-angle')), { keep: true, hint: 'Picture the orbitals in the drawing: which axes do they point along?', solution: sol });
+  if (hasTriple) return make('What angle is there between the two π bonds of the triple bond?', '90°', { ok: 'One π bond uses the p_y orbitals and the other uses p_z, and y ⟂ z.', '180°': '180° is the angle between the two sp hybrids along the bond axis. The π bonds use p_y and p_z.', '120°': '120° is for sp² hybrids. The two π bonds come from p_y and p_z, which are perpendicular.', '109.5°': '109.5° is for sp³ hybrids. The leftover p_y and p_z orbitals are at right angles.' }, 'The two π bonds come from p_y–p_y and p_z–p_z overlap; y and z are perpendicular, so the π bonds are at 90°.');
+  if (hyb === 'sp2') return make('What angle does the unhybridized p_y orbital make with the plane of the sp² hybrids?', '90°', { ok: 'The leftover p orbital stands straight up out of the sp² plane, which is why the π bond forms above and below it.', '120°': '120° is the angle between the sp² hybrids themselves, inside the plane.', '180°': 'The p orbital isn’t in the plane at all; it stands perpendicular to it.', '109.5°': '109.5° is for sp³. The p_y orbital is perpendicular to the sp² plane.' }, 'p_y is perpendicular (90°) to the plane of the three sp² hybrids.');
+  if (hyb === 'sp') return make('What angle do the two sp hybrid orbitals make with each other?', '180°', { ok: 'Two hybrids point in opposite directions: linear, 180°.', '90°': '90° is between the leftover p orbitals, not the sp hybrids.' }, 'sp hybrids: 180° (linear).');
+  if (hyb === 'sp3') return make('What is the ideal angle between sp³ hybrid orbitals?', '109.5°', { ok: 'Four hybrids spread to the corners of a tetrahedron: 109.5°. (Lone pairs squeeze the real H–X–H angle a bit.)', '90°': '90° would be pure p orbitals. Hybridizing spreads the four orbitals to 109.5°.' }, 'sp³ hybrids: 109.5° (tetrahedral).');
+  return null;
+}
 function genStudio() {
   const M = drawBag('studio', STUDIO), ovs = stOverlaps(M), first = {};
   M.atoms.forEach(([el], i) => { first[i] = el === 'H' ? ['s'] : M.sets[i][0]; });
@@ -1911,7 +1958,8 @@ function genStudio() {
     answer: studioSvg(M, { sets: first }), hint: 'H: 1s. Diatomic halogens: the half-filled p along the internuclear axis (pₓ). Central atoms: hybrids for their electron groups, plus leftover p orbitals for any π bonds.',
     solution: M.atoms.map(([el], i) => el === 'H' ? null : `${el} (atom ${i + 1}): ${M.sets[i].map(s => s.map(x => ORB_TXT[x]).join(' + ')).join(' or ')}`).filter(Boolean).join(' · ') || 'Each H uses its 1s orbital.' };
   const p2 = { kind: 'ovlabel', ask: 'The overlaps are glowing. Mark each numbered overlap σ or π.', M, ovs, answer: ovs.map((o, k) => `${k + 1}: ${o.kind}`).join(' · '), hint: 'Overlap on the internuclear axis (head-on) = σ. Overlap above and below the axis (side by side p) = π.', solution: `${nb} σ${np ? ` and ${np} π` : ''}: every bond has one σ on its axis; each extra bond in a double or triple bond is a π from side-by-side p orbitals.` };
-  return { topic: 'studio', tag: F(M.f), stem: `<p class="lead">Orbital Studio: <b>${F(M.f)}</b></p><p class="note">x points right along the internuclear axis, y points up, z points toward you.</p>`, tip: 'σ: head-on overlap along the internuclear axis. π: side-by-side p orbitals, perpendicular to the axis.', parts: [p1, p2] };
+  const p3 = stAnglePart(M);
+  return { topic: 'studio', tag: F(M.f), stem: `<p class="lead">Orbital Studio: <b>${F(M.f)}</b></p><p class="note">x points right along the internuclear axis, y points up, z points toward you.</p>`, tip: 'σ: head-on overlap along the internuclear axis. π: side-by-side p orbitals, perpendicular to the axis.', parts: p3 ? [p1, p2, p3] : [p1, p2] };
 }
 /* ---------- tiles + topics ---------- */
 const TOPICS = {
