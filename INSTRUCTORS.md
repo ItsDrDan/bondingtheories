@@ -4,7 +4,14 @@ Working title **Orbital Overlap**. Repo/hub label: **Bonding Theories**. Suggest
 
 - **Courses:** CHEM 1A (default) and CHEM 1B review. Link with `?course=1A` or `?course=1B`; progress is saved separately per course on the student's device.
 - **Source:** OpenStax *Chemistry 2e* §7.6 (VSEPR) and §8.1–8.4. Numbers in the game: the H₂ energy curve (74 pm, 436 kJ/mol, §8.1), real angles (NH₃ 107.3°, H₂O 104.5°, §8.2; v1 said 107°, corrected in v2 to match OpenStax), and bond lengths/energies from **Table 8.1** (H–Cl, H–Br, H–I, C–C/C=C/C≡C, C–N/C=N/C≡N, C–O/C=O/C≡O), all checked against openstax.org on 2026-11-11. Bond orders, electron counts, unpaired electrons and magnetism are **computed** from the MO filling, never typed in.
-- **Current file:** `bonding-theories-v5.html` (version in the file name only). Earlier versions are kept here for comparison.
+- **Current file:** `bonding-theories-v6.html` (version in the file name only). Earlier versions are kept here for comparison.
+- **v6 additions** (question types modeled on OpenStax Ch 8 exercises and the Tro 6e Ch 11 test bank; all wording original, no items copied):
+  - Hybrid Workshop: **How many are sp²?** (count sp / sp² / sp³ central atoms, or species with a π bond, from formulas), **Shape → groups & lone pairs** (hybridization + molecular shape → bonded atoms and lone pairs), **Shape around an atom** (VSEPR shape and hybridization of one interior atom in a bigger molecule). New "Why hybridize?" cards: why carbon can't use sp³d, why PF₅ exists but NF₅ doesn't.
+  - Sigma & Pi: N₂ "three π bonds?" and allene's perpendicular CH₂ planes; a third boss molecule, **acetaminophen (Tylenol)**: 20 σ, 4 π, 7 sp² C.
+  - Overlap Basics: why C≡C (839) isn't 3 × C–C (347).
+  - MO Builder: **Which is paramagnetic?** (pick from 4 species), **Order the MOs** (increasing energy, Li₂–N₂ vs O₂–Ne₂), **MO concepts** (odd/even electrons and magnetism, 5 + 5 AOs → 10 MOs, why bonding MOs are lower, F₂²⁺ has BO 2, N₂²⁺ diamagnetic vs O₂⁴⁺ paramagnetic, H vs H₂ and O vs O₂ ionization energy, B₂ uses all three 2p).
+  - New molecules: BeH₂, CS₂, Cl₂CO, ClNO, NH₂⁻ (Lewis/central atom); I₃⁻, ICl₄⁻, BrCl₃ (expanded octet); HONO, N₂F₂, N₂F₄, CH₃COOH (interior atoms). Molecules with F are left out of the bond-label questions (terminal-halogen hybridization is a convention call).
+  - Still held back: CO, CN⁻, NO (heteronuclear MO). Tro has them but OpenStax Ch 8 doesn't.
 - **v5 look and topic picker:** colors match the Study Hub / MCAT hub (pastel gradient background, rainbow title, chunky cards and buttons with a solid bottom edge). Each tile has its own color (Overlap Basics blue, Hybrid Workshop green, Sigma & Pi pink, MO Builder orange), and questions take their tile's color. Tapping a tile turns on **all** of its topics (including sp³d/sp³d² and the boss molecules); the topic list sits collapsed under "Focus on specific topics" for anyone who wants to narrow it, with a "Turn all topics back on" link.
 - **Art:** see `ASSETS.md` (the brief for ChatGPT). v4 picks up each file automatically from `assets/` once it exists and falls back to the drawings and brand badges until then.
 

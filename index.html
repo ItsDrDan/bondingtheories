@@ -460,7 +460,15 @@ const MOLS = [
   { f: 'H3O^+', c: 'O', o: X3('H'), ord: [1, 1, 1], lp: [1, 0, 0, 0], q: 1 },
   { f: 'H2O', c: 'O', o: ['H', 'H'], ord: [1, 1], lp: [2, 0, 0] },
   { f: 'OF2', c: 'O', o: ['F', 'F'], ord: [1, 1], lp: [2, 3, 3] },
+  { f: 'BeH2', c: 'Be', o: ['H', 'H'], ord: [1, 1], lp: [0, 0, 0], note: 'Be has only 4 electrons around it. That is normal for Be.' },
+  { f: 'CS2', c: 'C', o: ['S', 'S'], ord: [2, 2], lp: [0, 2, 2] },
+  { f: 'Cl2CO', c: 'C', o: ['O', 'Cl', 'Cl'], ord: [2, 1, 1], lp: [0, 2, 3, 3] },
+  { f: 'ClNO', c: 'N', o: ['Cl', 'O'], ord: [1, 2], lp: [1, 3, 2] },
+  { f: 'NH2^-', c: 'N', o: ['H', 'H'], ord: [1, 1], lp: [2, 0, 0], q: -1 },
   /* expanded octets (CHEM 1A, OpenStax 8.2 still teaches sp3d and sp3d2) */
+  { f: 'I3^-', c: 'I', o: ['I', 'I'], ord: [1, 1], lp: [3, 3, 3], q: -1 },
+  { f: 'ICl4^-', c: 'I', o: X4('Cl'), ord: [1, 1, 1, 1], lp: [2, 3, 3, 3, 3], q: -1 },
+  { f: 'BrCl3', c: 'Br', o: X3('Cl'), ord: [1, 1, 1], lp: [2, 3, 3, 3] },
   { f: 'PCl5', c: 'P', o: X5('Cl'), ord: [1, 1, 1, 1, 1], lp: [0, 3, 3, 3, 3, 3] },
   { f: 'SF4', c: 'S', o: X4('F'), ord: [1, 1, 1, 1], lp: [1, 3, 3, 3, 3] },
   { f: 'ClF3', c: 'Cl', o: X3('F'), ord: [1, 1, 1], lp: [2, 3, 3, 3] },
@@ -470,7 +478,7 @@ const MOLS = [
   { f: 'XeF4', c: 'Xe', o: X4('F'), ord: [1, 1, 1, 1], lp: [2, 3, 3, 3, 3] }
 ];
 /* real bond angles used in "Flat Lewis → real angle" (OpenStax 7.6 / 8.2) */
-const ANGLE = { CH4: '109.5°', CCl4: '109.5°', 'NH4^+': '109.5°', NH3: '107.3°', H2O: '104.5°', BF3: '120°', CO2: '180°', BeCl2: '180°', HCN: '180°', 'CO3^2-': '120°', 'NO3^-': '120°', SO3: '120°', SF6: '90°', XeF4: '90°', XeF2: '180°' };
+const ANGLE = { BeH2: '180°', CS2: '180°', 'I3^-': '180°', 'ICl4^-': '90°', CH4: '109.5°', CCl4: '109.5°', 'NH4^+': '109.5°', NH3: '107.3°', H2O: '104.5°', BF3: '120°', CO2: '180°', BeCl2: '180°', HCN: '180°', 'CO3^2-': '120°', 'NO3^-': '120°', SO3: '120°', SF6: '90°', XeF4: '90°', XeF2: '180°' };
 function info(m) {
   const nb = m.o.length, lpC = m.lp[0], groups = nb + lpC, hyb = HYB[groups];
   const pi = m.ord.reduce((s, o) => s + o - 1, 0), bondSum = m.ord.reduce((s, o) => s + o, 0);
@@ -494,6 +502,10 @@ const MULTI = [
   { f: 'CH3NH2', name: null, lvl: 2, atoms: [['C', 0, 0], ['N', 1, 0], ['H', 0, -1], ['H', 0, 1], ['H', -1, 0], ['H', 2, 0], ['H', 1, 1]], bonds: [[0, 1, 1], [0, 2, 1], [0, 3, 1], [0, 4, 1], [1, 5, 1], [1, 6, 1]] },
   { f: 'CH3CN', name: null, lvl: 2, atoms: [['C', 0, 0], ['C', 1, 0], ['N', 2, 0], ['H', 0, -1], ['H', 0, 1], ['H', -1, 0]], bonds: [[0, 1, 1], [1, 2, 3], [0, 3, 1], [0, 4, 1], [0, 5, 1]] },
   { f: 'HCOOH', name: null, lvl: 2, atoms: [['C', 0, 0], ['O', 0, -1], ['O', 1, 0], ['H', -1, 0], ['H', 2, 0]], bonds: [[0, 1, 2], [0, 2, 1], [0, 3, 1], [2, 4, 1]] },
+  { f: 'HONO', name: null, lvl: 2, atoms: [['H', -1, 0], ['O', 0, 0], ['N', 1, 0], ['O', 1.5, R3]], bonds: [[0, 1, 1], [1, 2, 1], [2, 3, 2]] },
+  { f: 'N2F2', name: null, lvl: 2, atoms: [['F', -0.5, -R3], ['N', 0, 0], ['N', 1, 0], ['F', 1.5, R3]], bonds: [[0, 1, 1], [1, 2, 2], [2, 3, 1]] },
+  { f: 'N2F4', name: null, lvl: 2, atoms: [['N', 0, 0], ['N', 1.2, 0], ['F', -1, 0], ['F', 0, -1], ['F', 2.2, 0], ['F', 1.2, 1]], bonds: [[0, 1, 1], [0, 2, 1], [0, 3, 1], [1, 4, 1], [1, 5, 1]] },
+  { f: 'CH3COOH', name: null, lvl: 2, atoms: [['C', 0, 0], ['C', 1, 0], ['O', 1, -1], ['O', 2, 0], ['H', 0, -1], ['H', 0, 1], ['H', -1, 0], ['H', 3, 0]], bonds: [[0, 1, 1], [1, 2, 2], [1, 3, 1], [0, 4, 1], [0, 5, 1], [0, 6, 1], [3, 7, 1]] },
   { f: 'C3H4', name: 'allene', lvl: 3, atoms: [['C', -1, 0], ['C', 0, 0], ['C', 1, 0], ['H', -1.5, -R3], ['H', -1.5, R3], ['H', 1.5, -R3], ['H', 1.5, R3]], bonds: [[0, 1, 2], [1, 2, 2], [0, 3, 1], [0, 4, 1], [2, 5, 1], [2, 6, 1]], tip: 'In allene the middle carbon has two double bonds (2 groups → sp), and each end carbon has 3 groups (sp²).' },
   { f: 'C3H3N', name: null, lvl: 3, atoms: [['C', 0, 0], ['C', 1, 0], ['C', 1.5, R3], ['N', 2, 2 * R3], ['H', -0.5, -R3], ['H', -0.5, R3], ['H', 1.5, -R3]], bonds: [[0, 1, 2], [1, 2, 1], [2, 3, 3], [0, 4, 1], [0, 5, 1], [1, 6, 1]] },
   { f: 'C6H6', name: 'benzene', lvl: 3, atoms: (() => { const a = []; for (let k = 0; k < 6; k++) { const t = (-90 + 60 * k) * Math.PI / 180; a.push(['C', Math.cos(t), Math.sin(t)]); } for (let k = 0; k < 6; k++) { const t = (-90 + 60 * k) * Math.PI / 180; a.push(['H', 1.95 * Math.cos(t), 1.95 * Math.sin(t)]); } return a; })(), bonds: [[0, 1, 2], [1, 2, 1], [2, 3, 2], [3, 4, 1], [4, 5, 2], [5, 0, 1], [0, 6, 1], [1, 7, 1], [2, 8, 1], [3, 9, 1], [4, 10, 1], [5, 11, 1]], tip: 'Benzene is drawn here as one resonance structure. Its 6 π electrons are really spread around the whole ring.' }
@@ -805,6 +817,17 @@ const T2_WHY = [
     ['Only lone pairs', false, 'Hybrids also make σ bonds: each C–H in CH₄ is C sp³ – H 1s.', 'hyb-why'],
     ['Only core electrons', false, 'Hybrids are made from valence orbitals. Core electrons are not involved.', 'hyb-why']] }
 ];
+T2_WHY.push(
+  { q: 'Why can’t a carbon atom form five bonds using sp³d hybrid orbitals?', c: [
+    ['Carbon’s valence shell (n = 2) has no d orbitals', true, 'Only n = 3 and higher shells have d orbitals, so sp³d and sp³d² are only possible from period 3 on (P, S, Cl, Xe…).'],
+    ['sp³d hybrids are only for metals', false, 'PCl₅ and SF₄ use sp³d and they are nonmetals. The issue is that n = 2 has no d orbitals.', 'hyb-why'],
+    ['Five bonds would need five s orbitals', false, 'A hybrid set uses one s. sp³d uses s + 3 p + 1 d, and carbon has no d.', 'hybrid-count'],
+    ['Carbon’s 2s orbital is full', false, 'Carbon promotes a 2s electron when it hybridizes. The missing d orbitals are the problem.', 'hyb-why']] },
+  { q: 'PF₅ exists, but NF₅ does not. Why?', c: [
+    ['N (period 2) has no d orbitals, so it can’t make 5 hybrids; P (period 3) can use sp³d', true, 'N is limited to 4 electron groups (sp³ at most).'],
+    ['N is more electronegative than P', false, 'Electronegativity isn’t the reason. N has no valence d orbitals for a 5th hybrid.', 'hyb-why'],
+    ['F can’t bond to N', false, 'NF₃ exists, so N–F bonds are fine. N just can’t hold 5 groups.', 'hyb-why'],
+    ['P has more valence electrons than N', false, 'Both have 5 valence electrons. The difference is d orbitals in P’s n = 3 shell.', 'hyb-why']] });
 function genWhy() {
   if (chance(0.45)) {
     const n = rint(1, 3), hyb = ['sp', 'sp2', 'sp3'][n - 1];
@@ -1046,7 +1069,7 @@ function genCount() {
 }
 const orbLab = (a, kind) => a.el === 'H' ? 'H 1s' : kind === 'pi' ? `${a.el} 2p` : `${a.el} ${hybH(a.hyb)}`;
 function genLabel() {
-  const M = drawBag('label', MULTI.filter(x => x.f !== 'N2')), S = multiSpec(M);
+  const M = drawBag('label', MULTI.filter(x => x.f !== 'N2' && x.atoms.every(a => 'CNOH'.includes(a[0])))), S = multiSpec(M);
   const multis = S.bonds.map((b, i) => i).filter(i => S.bonds[i].o > 1), singles = S.bonds.map((b, i) => i).filter(i => S.bonds[i].o === 1);
   const bi = multis.length && chance(0.6) ? pick(multis) : pick(singles.length ? singles : multis), b = S.bonds[bi], A = S.atoms[b.a], B = S.atoms[b.b];
   const kind = b.o > 1 && chance(0.5) ? 'pi' : 'sigma';
@@ -1091,6 +1114,17 @@ const T3_PI = [
     ['It has two lone pairs', false, 'Lone pairs don’t make π bonds. Leftover p orbitals with one electron each do.', 'pi-source'],
     ['Its 2s orbital makes a π bond', false, 's orbitals can only overlap head-on (σ).', 'pi-from-s']] }
 ];
+T3_PI.push(
+  { q: 'A classmate says N₂ has three π bonds, one from each pair of p orbitals. Do you agree?', c: [
+    ['No: one pair of p orbitals overlaps head-on (σ), so N≡N is 1 σ + 2 π', true, 'Only the two p orbitals perpendicular to the bond axis can overlap side by side. The one along the axis makes the σ bond.'],
+    ['Yes: three p orbitals make three π bonds', false, 'The p orbital pointing along the axis overlaps end-on, which is σ, not π.', 'sigma-pi-total'],
+    ['No: N₂ has no π bonds', false, 'A triple bond has two π bonds.', 'pi-count'],
+    ['No: N₂ has one π bond', false, 'Triple = 1 σ + 2 π.', 'pi-count']] },
+  { q: 'In allene, H₂C=C=CH₂, how are the two CH₂ groups arranged?', c: [
+    ['In perpendicular planes', true, 'The middle C is sp with two p orbitals at 90°. Each makes a π bond with a different end carbon, which locks the two CH₂ planes at 90° to each other.'],
+    ['In the same plane', false, 'The two π bonds use the middle carbon’s two perpendicular p orbitals, so the ends are twisted 90° apart.', 'pi-geometry'],
+    ['Free to rotate', false, 'Both C=C bonds have a π bond, which blocks rotation.', 'rotation-sigma'],
+    ['Tilted at 109.5°', false, 'The two p orbitals on the sp carbon are at 90°, so the planes are perpendicular.', 'pi-geometry']] });
 const T3_ROT = [
   { q: 'Why can’t the two ends of a C=C double bond twist freely?', art: etheneSvg(), c: [
     ['Twisting turns the p orbitals away from each other and breaks the π overlap', true, 'π overlap needs the two p orbitals parallel. A twist destroys it, which costs a lot of energy.'],
@@ -1320,6 +1354,11 @@ const T1_STRENGTH = [
     [s[1], false, `${s[1]} (${T81[s[1]][0]} pm) is shorter than ${s[0]} but longer than ${s[2]}. More bonds → shorter.`, 'bo-length-backwards'],
     [s[0], false, SLIP['bo-length-backwards'] + ` ${s[0]} is the longest (${T81[s[0]][0]} pm).`, 'bo-length-backwards'],
     ['All the same length', false, 'More shared electron pairs pull the nuclei closer, so the lengths differ.', 'bo-length-backwards']], sol: s.map(b => `${b} ${T81[b][0]} pm`).join(' · ') + '. More bonds: shorter and stronger.' }; },
+  () => ({ q: 'A C≡C bond (839 kJ/mol) is not three times as strong as a C–C bond (347 kJ/mol). Why?', art: t81(['C–C', 'C≡C'], 'E'), c: [
+    ['The two π bonds are each weaker than the σ bond', true, '3 × 347 = 1041 kJ/mol, but C≡C is only 839. Side-by-side π overlap is weaker than end-to-end σ overlap.'],
+    ['A triple bond has three σ bonds', false, SLIP['sigma-pi-total'], 'sigma-pi-total'],
+    ['The triple bond is longer', false, 'C≡C (120.8 pm) is shorter than C–C (150.6 pm).', 'bo-length-backwards'],
+    ['π bonds are stronger than σ bonds', false, 'Then C≡C would be more than 1041 kJ/mol. It’s less.', 'pi-strength']], sol: '839 − 347 = 492 kJ/mol for two π bonds: about 246 each, weaker than the 347 σ.' }),
   () => ({ q: 'Two p orbitals on different atoms overlap the most when they are…', c: [
     ['pointed end to end, along the line between the nuclei', true, 'OpenStax §8.1: overlap is greatest when the orbitals point at each other along the internuclear axis. That makes a σ bond.'],
     ['tilted at an angle to each other', false, 'Any arrangement other than end to end gives less overlap.', 'overlap-direction'],
@@ -1448,7 +1487,8 @@ function genSkelCount() {
 /* boss molecules: caffeine has fused rings, so its layout is placed by hand (bond length 1) */
 const BOSS = [
   { name: 'caffeine', smi: 'CN1C=NC2=C1C(=O)N(C(=O)N2C)C', pos: [[2.126, -1.76], [1.817, -0.809], [2.405, 0], [1.817, 0.809], [0.866, 0.5], [0.866, -0.5], [0, -1], [0, -2], [-0.866, -0.5], [-0.866, 0.5], [-1.732, 1], [0, 1], [0, 2], [-1.732, -1]] },
-  { name: 'aspirin', smi: 'CC(=O)OC1=CC=CC=C1C(=O)O' }
+  { name: 'aspirin', smi: 'CC(=O)OC1=CC=CC=C1C(=O)O' },
+  { name: 'acetaminophen (Tylenol)', smi: 'CC(=O)NC1=CC=C(O)C=C1' }
 ];
 function genBoss() {
   const B = drawBag('boss', BOSS), g = parseSmi(B.smi), pos = B.pos ? B.pos.map(([x, y]) => ({ x, y })) : layoutComp(g), I = skelInfo(g);
@@ -1461,9 +1501,9 @@ function genBoss() {
 /* ================= v2: full Bond Labeler (label every kind of bond) ================= */
 const HYBT = { sp: 'sp', sp2: 'sp²', sp3: 'sp³' };
 const orbT = (a, kind) => a.el === 'H' ? '1s' : kind === 'pi' ? '2p' : HYBT[a.hyb];
-const RANK = { C: 0, N: 1, O: 2, H: 3 };
+const RANK = { C: 0, N: 1, O: 2, F: 3, Cl: 4, H: 5 };
 function genLabeler() {
-  const M = drawBag('labeler', MULTI.filter(x => !['N2', 'C6H6'].includes(x.f))), S = multiSpec(M);
+  const M = drawBag('labeler', MULTI.filter(x => !['N2', 'C6H6'].includes(x.f) && x.atoms.every(a => 'CNOH'.includes(a[0])))), S = multiSpec(M);
   const seen = {}, rows = [];
   S.bonds.forEach((b, i) => {
     let A = S.atoms[b.a], B = S.atoms[b.b]; if (RANK[A.el] > RANK[B.el] || (A.el === B.el && A.hyb > B.hyb)) [A, B] = [B, A];
@@ -1595,6 +1635,109 @@ function genSCBO() {
   return { topic: 'read', tag: F(an.f) + ' (typed)', stem: `<p class="lead">Use MO theory for <b>${F(an.f)}</b>. Sketch the diagram on paper.</p>`, parts: [numPart(`Find the bond order and the number of unpaired electrons in ${F(an.f)}.`, [{ key: 'bo', label: 'Bond order', answer: an.bo, show: fmtBO(an.bo), diag: boDiag(an) }, { key: 'u', label: 'Unpaired electrons', answer: an.unp, diag: () => ['unpaired-count', `Fill ${an.n} ${an.type === '1s' ? '' : 'valence '}electrons (${an.type === 'low' ? 'π2p below σ2p' : an.type === 'high' ? 'σ2p below π2p' : 'σ1s then σ*1s'}) and count single arrows.`] }], { hint: `${an.n} ${an.type === '1s' ? '' : 'valence '}electrons. BO = ½ (bonding − antibonding).`, solution: `${configTxt(an)}. BO = ½ (${an.bond} − ${an.anti}) = ${fmtBO(an.bo)}; ${an.unp} unpaired.` })] };
 }
 
+/* ================= v6: more question types (modeled on OpenStax Ch 8 exercises and the Tro Ch 11 test bank; original wording) ================= */
+/* How many of these have an sp² (sp, sp³) central atom / at least one π bond? Students work from formulas, like an exam. */
+function genHowMany() {
+  const pool = MOLS.filter(m => !info(m).expanded);
+  const mode = pick(['sp', 'sp2', 'sp3', 'pi']);
+  let set, n;
+  do { set = shuffle(pool).slice(0, 5); n = set.filter(m => mode === 'pi' ? info(m).pi > 0 : info(m).hyb === mode).length; } while (n < 1 || n > 4);
+  const G = { sp: 2, sp2: 3, sp3: 4 }[mode];
+  const byNb = set.filter(m => info(m).nb === G).length, byBonds = set.filter(m => info(m).bondSum + info(m).lpC === G).length;
+  const ask = mode === 'pi' ? 'How many of these contain at least one <b>π bond</b>?' : `How many of these have an <b>${hybH(mode)}</b> central atom?`;
+  const list = set.map(m => F(m.f)).join(', ');
+  const sol = set.map(m => { const I = info(m); return `${F(m.f)}: ${mode === 'pi' ? (I.pi ? `${I.pi} π` : 'no π') : `${I.groups} groups → ${hybH(I.hyb)}`}`; }).join(' · ');
+  const p = numPart(`${ask}<br><span style="font-weight:800;font-size:1.1rem">${list}</span>`, [{ key: 'n', label: 'How many', answer: n, diag: v => mode !== 'pi' && v === byNb && byNb !== n ? ['forgot-lone-pairs', 'Looks like you counted bonded atoms only. ' + SLIP['forgot-lone-pairs']] : mode !== 'pi' && v === byBonds && byBonds !== n ? ['double-bond-two-groups', SLIP['double-bond-two-groups']] : ['howmany', mode === 'pi' ? 'Draw each Lewis structure: any double or triple bond means at least one π bond.' : 'Draw each Lewis structure, count electron groups on the central atom (bonded atoms + lone pairs), then match: 2 sp, 3 sp², 4 sp³.'] }], { hint: 'Sketch each Lewis structure on paper first.', solution: sol });
+  return { topic: 'howmany', tag: mode === 'pi' ? 'π bonds' : hybH(mode), stem: '<p class="lead">Draw the Lewis structures on paper, then count.</p>', tip: 'Groups = bonded atoms + lone pairs on the central atom. 2 → sp, 3 → sp², 4 → sp³.', parts: [p] };
+}
+/* Hybridization + molecular shape → bonding groups and lone pairs */
+function genReverse() {
+  const keys = Object.keys(SHAPE).filter(k => OPTS.expanded || +k.split('-')[0] <= 4), k = drawBag(OPTS.expanded ? 'revX' : 'rev', keys), [g, l] = k.split('-').map(Number);
+  const p = numPart(`A central atom is <b>${hybH(HYB[g])}</b> hybridized and the molecular shape is <b>${SHAPE[k].toLowerCase()}</b>. How many atoms are bonded to it, and how many lone pairs does it have?`, [
+    { key: 'b', label: 'Bonded atoms', answer: g - l, diag: v => v === g ? ['shape-vs-eg', `${hybH(HYB[g])} means ${g} groups in total, but some are lone pairs. ` + SLIP['shape-vs-eg']] : v === l ? ['swap', 'Those numbers look swapped.'] : ['reverse', `${hybH(HYB[g])} = ${g} electron groups. A ${SHAPE[k].toLowerCase()} shape with ${g} groups leaves ${l} as lone pairs.`] },
+    { key: 'l', label: 'Lone pairs', answer: l, diag: v => v === g - l ? ['swap', 'Those numbers look swapped.'] : ['reverse', `Start from ${g} groups (${hybH(HYB[g])}); the shape tells you how many are atoms. The rest are lone pairs.`] }],
+    { hint: `Hybridization gives the total number of groups: ${hybH(HYB[g])} → ${g}.`, solution: `${hybH(HYB[g])} → ${g} groups (${EG[g].toLowerCase()}). ${SHAPE[k]} → ${g - l} bonded atoms + ${l} lone pair${l === 1 ? '' : 's'}.` });
+  return { topic: 'reverse', tag: hybH(HYB[g]) + ' · ' + SHAPE[k], stem: '', tip: 'Total groups from the hybridization; the shape names only the atoms, so the rest are lone pairs.', parts: [p] };
+}
+/* Shape around one interior atom of a bigger molecule */
+const SHAPES5 = ['Linear', 'Trigonal planar', 'Tetrahedral', 'Bent', 'Trigonal pyramidal'];
+function genAtomShape() {
+  const M = drawBag('ashape', MULTI.filter(x => { const S0 = multiSpec(x); return S0.atoms.some(a => a.el !== 'H' && a.nb.length >= 2); })), S = multiSpec(M);
+  const cand = S.atoms.map((a, i) => i).filter(i => S.atoms[i].el !== 'H' && S.atoms[i].nb.length >= 2), t = drawBag('ashape-' + M.f, cand), A = S.atoms[t];
+  const shape = SHAPE[A.groups + '-' + A.lp], eg = EG[A.groups];
+  const p1 = choicePart(`What is the <b>molecular shape</b> around atom 1 (${A.el})?`, SHAPES5.map(sh => sh === shape ? opt(sh, true, `${A.nb.length} bonded atom${A.nb.length > 1 ? 's' : ''} + ${A.lp} lone pair${A.lp === 1 ? '' : 's'} → ${shape.toLowerCase()}.`) : sh === eg ? opt(sh, false, SLIP['shape-vs-eg'] + ` ${eg} is the electron-group geometry here.`, 'shape-vs-eg') : opt(sh, false, `${sh} doesn’t fit ${A.nb.length} bonded atom${A.nb.length > 1 ? 's' : ''} and ${A.lp} lone pair${A.lp === 1 ? '' : 's'} on this ${A.el}.`, 'shape-wrong')), { keep: true, hint: 'Count bonded atoms and lone pairs on atom 1 only. Name the shape from the atoms.', solution: `${A.groups} groups (${eg.toLowerCase()}), ${A.lp} lone pair${A.lp === 1 ? '' : 's'} → ${shape}.` });
+  const p2 = choicePart(`What is the hybridization of atom 1 (${A.el})?`, ['sp', 'sp2', 'sp3'].map(h => h === A.hyb ? opt(hybH(h), true, `${A.groups} groups → ${hybH(h)}.`) : (d => opt(hybH(h), false, d[1], d[0]))(tagSlip(A, h))), { keep: true, hint: '2 groups sp, 3 sp², 4 sp³.', solution: `${hybH(A.hyb)}.` });
+  return { topic: 'atomshape', tag: F(M.f) + ' · ' + A.el, stem: `<p class="lead">${molTitle(M)}</p><div class="figure">${molSvg(S, { nums: { [t]: 1 }, label: 'Structure with atom 1 marked' })}</div>`, tip: 'Each interior atom has its own VSEPR shape. Count groups around that atom only.', parts: [p1, p2] };
+}
+/* Which species is paramagnetic / diamagnetic? */
+function genParaList() {
+  const want = pick(['Paramagnetic', 'Diamagnetic']), all = MO_SPECIES.map(s => moAnalyze(s[0], s[1]));
+  const yes = shuffle(all.filter(a => a.mag === want))[0], no = shuffle(all.filter(a => a.mag !== want)).slice(0, 3);
+  const opts = [yes, ...no].map(a => opt(F(a.f), a === yes, a === yes ? `${F(a.f)}: ${a.unp} unpaired → ${a.mag.toLowerCase()}.` : `${F(a.f)}: ${a.unp} unpaired → ${a.mag.toLowerCase()}. ` + SLIP['para-dia-flip'], 'para-dia-flip'));
+  return { topic: 'paralist', tag: want.toLowerCase(), stem: '', tip: 'Fill each MO diagram (valence electrons, right ordering). Any single arrow → paramagnetic.', parts: [choicePart(`Which one of these is <b>${want.toLowerCase()}</b>?`, opts, { hint: 'Count valence electrons, fill the MOs, look for single arrows (the π and π* pairs are where they hide).', solution: [yes, ...no].map(a => `${F(a.f)}: ${a.unp} unpaired`).join(' · ') + '.' })], an: yes };
+}
+/* Order the MOs by energy */
+function genMOOrder() {
+  const el = drawBag('moorder', ['Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne']), type = moType(el), lv = moLevels(type).map(l => l.lab);
+  const other = moLevels(type === 'low' ? 'high' : 'low').map(l => l.lab);
+  const bondFirst = ['σ2s', type === 'low' ? 'π2p' : 'σ2p', type === 'low' ? 'σ2p' : 'π2p', 'σ*2s', 'π*2p', 'σ*2p'];
+  const swapTop = lv.slice(0, 4).concat(['σ*2p', 'π*2p']);
+  const show = a => a.join(' &lt; ');
+  const opts = [opt(show(lv), true, type === 'low' ? `${el}₂ is in the Li–N group: π2p sits below σ2p (s-p mixing).` : `${el}₂ is in the O–Ne group: σ2p sits below π2p.`),
+    opt(show(other), false, SLIP['wrong-ordering'], 'wrong-ordering'),
+    opt(show(bondFirst), false, 'σ*2s comes from the 2s orbitals, so it sits below every MO made from 2p.', 'mo-order'),
+    opt(show(swapTop), false, 'The highest MO is σ*2p: end-on antibonding overlap is the most destabilized. π*2p sits below it.', 'mo-order')];
+  return { topic: 'moorder', tag: F(el + '2'), stem: '', tip: 'From 2s: σ2s < σ*2s. From 2p: π2p and σ2p (order depends on the element), then π*2p < σ*2p.', parts: [choicePart(`Which list puts the valence MOs of ${F(el + '2')} in order of <b>increasing energy</b>?`, opts, { hint: 'First decide which group the element is in: Li–N or O–Ne.', solution: show(lv) + '.' })] };
+}
+/* MO concept questions (ideas from OpenStax Ch 8 exercises 33–49, original wording) */
+const T4_CONCEPT = [
+  { q: 'Can a molecule with an <b>odd</b> number of electrons be diamagnetic?', c: [
+    ['No: with an odd count, at least one electron has to be unpaired', true, 'Paired electrons come in twos, so an odd total always leaves at least one single electron → paramagnetic.'],
+    ['Yes, if all of its electrons are in bonding MOs', false, 'Where the electrons sit doesn’t matter; an odd number can’t all be paired.', 'para-dia-flip'],
+    ['Yes, if it is an ion', false, 'Charge changes the count, but an odd count is still odd: one electron is left unpaired.', 'para-dia-flip'],
+    ['Only if it has a triple bond', false, 'Bond type doesn’t change the count. Odd always leaves one unpaired electron.', 'para-dia-flip']] },
+  { q: 'Can a molecule with an <b>even</b> number of electrons be paramagnetic?', c: [
+    ['Yes: O₂ has 12 valence electrons and still has 2 unpaired electrons', true, 'Hund’s rule puts O₂’s last two electrons in the two π*2p orbitals, one each. B₂ is another example.'],
+    ['No: an even number always pairs up completely', false, 'Degenerate orbitals fill one electron each first (Hund), so an even count can still leave unpaired electrons, like O₂.', 'para-dia-flip'],
+    ['Only ions can be paramagnetic', false, 'Neutral O₂ and B₂ are paramagnetic.', 'para-dia-flip'],
+    ['Only if it has no π orbitals', false, 'O₂’s unpaired electrons are in its π* orbitals.', 'para-dia-flip']] },
+  { q: 'Atom A brings 5 atomic orbitals and atom B brings 5. How many molecular orbitals form?', c: [
+    ['10', true, 'Orbitals are conserved: 5 + 5 = 10 MOs (half bonding or nonbonding, half antibonding).'],
+    ['5', false, 'Every atomic orbital that goes in comes out as part of an MO: 5 + 5 = 10.', 'mo-count'],
+    ['25', false, 'Orbitals add, they don’t multiply: 5 + 5 = 10.', 'mo-count'],
+    ['20', false, 'n AOs in → n MOs out: 10 in, 10 out.', 'mo-count']] },
+  { q: 'Why is an electron in H₂’s σ1s orbital lower in energy than one in a lone H atom’s 1s?', c: [
+    ['In σ1s it is attracted to both nuclei at once', true, 'The bonding MO puts electron density between the two nuclei, so each electron feels two positive charges.'],
+    ['It moves faster in the molecule', false, 'Speed isn’t the reason; the extra nuclear attraction is.', 'lcao-phase'],
+    ['It sits closer to one nucleus only', false, 'Bonding density sits between both nuclei, attracted to both.', 'lcao-phase'],
+    ['Its spin flips in the molecule', false, 'Spin pairing is required, but the energy drop comes from attraction to two nuclei.', 'lcao-phase']] },
+  { q: 'What charge on F₂ would give an ion with a bond order of 2?', c: [
+    ['+2 (F₂²⁺)', true, 'Removing 2 electrons from the π*2p orbitals: 12 valence electrons, BO = ½ (8 − 4) = 2.'],
+    ['−2 (F₂²⁻)', false, 'Adding 2 electrons puts them in σ*2p: 16 electrons, BO = 0. ' + SLIP['charge-sign'], 'charge-sign'],
+    ['+1 (F₂⁺)', false, 'F₂⁺ has 13 valence electrons: BO = ½ (8 − 5) = 1.5.', 'bo-count'],
+    ['0 (neutral F₂)', false, 'Neutral F₂ has BO = 1.', 'bo-count']] },
+  { q: 'N₂²⁺ and O₂⁴⁺ both have 8 valence electrons. Why is N₂²⁺ diamagnetic but O₂⁴⁺ paramagnetic?', c: [
+    ['Different MO orders: N₂²⁺ fills both π2p orbitals; O₂⁴⁺ fills σ2p first, leaving one electron in each π2p', true, 'After σ2s and σ*2s, 4 electrons remain. With π2p lowest (N) they pair in π2p; with σ2p lowest (O), 2 go to σ2p and 2 spread over the π2p pair.'],
+    ['O has more protons, so its electrons can’t pair', false, 'Nuclear charge doesn’t stop pairing. The MO energy order is what differs.', 'wrong-ordering'],
+    ['O₂⁴⁺ has a higher bond order', false, 'Both have bond order 2. The difference is which MOs hold the electrons.', 'wrong-ordering'],
+    ['N₂²⁺ is diamagnetic because it is an ion', false, 'Both are ions. Magnetism depends on unpaired electrons, set by the MO order.', 'para-dia-flip']] },
+  { q: 'Which has the higher first ionization energy: an H atom or an H₂ molecule?', c: [
+    ['H₂: its electrons are in σ1s, lower in energy than H’s 1s', true, 'Lower energy = more tightly held, so more energy is needed to remove one.'],
+    ['The H atom', false, 'H₂’s electrons sit in a bonding MO below the atomic 1s, so they are harder to remove.', 'ionize-wrong-mo'],
+    ['They are the same', false, 'Bonding lowers the electron energy, so H₂ holds its electrons more tightly.', 'ionize-wrong-mo'],
+    ['H₂, because it has two protons in one nucleus', false, 'H₂ has two separate nuclei. The reason is the lower-energy bonding MO.', 'ionize-wrong-mo']] },
+  { q: 'Which has the higher first ionization energy: an O atom or an O₂ molecule?', c: [
+    ['The O atom: O₂ loses an electron from π*2p, which is higher in energy than O’s 2p', true, 'O₂’s HOMO is antibonding (above the atomic 2p), so that electron is easier to remove.'],
+    ['O₂: bonding always holds electrons more tightly', false, 'Not for O₂: its highest electrons are in antibonding π*2p, above the atomic 2p.', 'ionize-wrong-mo'],
+    ['They are the same', false, 'O₂’s HOMO (π*2p) is higher in energy than O’s 2p, so they differ.', 'ionize-wrong-mo'],
+    ['O₂, because it is paramagnetic', false, 'Magnetism doesn’t set ionization energy. Compare the energy of the electron being removed.', 'ionize-wrong-mo']] },
+  { q: 'Boron is 2s²2p¹. In the MO diagram of B₂, how many 2p orbitals from each B atom combine?', c: [
+    ['All three: every valence orbital combines, even the empty ones', true, 'MOs form from all valence AOs; empty ones simply give MOs that stay empty.'],
+    ['Only one, because B has one p electron', false, 'Electron count doesn’t limit which orbitals combine. All three 2p orbitals form MOs.', 'mo-count'],
+    ['Two', false, 'All three 2p orbitals on each atom combine.', 'mo-count'],
+    ['None: B₂ uses only 2s orbitals', false, 'B₂’s bonding electrons are in the π2p orbitals.', 'mo-count']] }
+];
+const genMOConcept = () => staticQ('moconcept', Object.assign({ tip: 'Unpaired electrons → paramagnetic. n AOs → n MOs. Electron energy decides ionization.' }, drawBag('t4con', T4_CONCEPT)));
 /* ---------- tiles + topics ---------- */
 const TOPICS = {
   whatbond: { label: 'What makes a bond', tile: 't1', gen: genWhatbond, video: 'hyb' },
@@ -1609,6 +1752,9 @@ const TOPICS = {
   boxes: { label: 'Orbital boxes & roles', tile: 't2', gen: genBoxes, video: 'orbdiag' },
   bondtype: { label: 'σ or π? Label & count', tile: 't2', gen: genBondType, video: 'hyb' },
   mixer: { label: 'Hybrid Mixer', tile: 't2', gen: genMixer, video: 'hyb' },
+  howmany: { label: 'How many are sp²?', tile: 't2', gen: genHowMany, video: 'hyb' },
+  reverse: { label: 'Shape → groups & lone pairs', tile: 't2', gen: genReverse, video: 'vsepr' },
+  atomshape: { label: 'Shape around an atom', tile: 't2', gen: genAtomShape, video: 'vsepr' },
   tagger: { label: 'Tag every atom', tile: 't2', gen: genTagger, video: 'hyb' },
   expanded: { label: 'sp³d and sp³d²', tile: 't2', gen: genExpanded, video: 'vsepr', badge: 'expanded octet' },
   count: { label: 'Count σ and π', tile: 't3', gen: genCount, video: 'hyb' },
@@ -1625,6 +1771,9 @@ const TOPICS = {
   read: { label: 'Read a diagram', tile: 't4', gen: genRead, video: 'mo2' },
   trends: { label: 'Bond order trends', tile: 't4', gen: genTrends, video: 'mo2' },
   ranker: { label: 'Ranker', tile: 't4', gen: genRanker, video: 'mo2' },
+  paralist: { label: 'Which is paramagnetic?', tile: 't4', gen: genParaList, video: 'mo2' },
+  moorder: { label: 'Order the MOs', tile: 't4', gen: genMOOrder, video: 'mo1' },
+  moconcept: { label: 'MO concepts', tile: 't4', gen: genMOConcept, video: 'mo1' },
   ionize: { label: 'HOMO & ionization', tile: 't4', gen: genIonize, video: 'mo2' },
   theory: { label: 'Which theory?', tile: 't4', gen: genTheory, video: 'mo1' },
   o2magnet: { label: 'O₂ and the magnet', tile: 't4', gen: genO2Magnet, video: 'mo2' }
@@ -1632,17 +1781,17 @@ const TOPICS = {
 const TILES = [
   { id: 't1', title: 'Overlap Basics', blurb: 'What makes a bond. σ vs π overlap.', sec: '§8.1', topics: ['whatbond', 'pecurve', 'gallery', 'which', 'strength'],
     ideas: ['A covalent bond = two <b>half-filled</b> orbitals overlapping. The shared pair sits between the nuclei.', 'Bond length = distance at the lowest energy. Bond energy = depth of the energy well (H₂: 74 pm, 436 kJ/mol).', 'Head-on overlap → <b>σ</b> (density on the axis). Side-by-side p overlap → <b>π</b> (above and below).', 'More overlap → stronger bond. In a series of similar bonds (H–Cl, H–Br, H–I), shorter bonds overlap better; a π bond is weaker than a σ bond (OpenStax Table 8.1).'] },
-  { id: 't2', title: 'Hybrid Workshop', blurb: 'sp, sp², sp³: groups → hybrids → shape.', sec: '§8.2', topics: ['why', 'table', 'groups', 'angle', 'boxes', 'bondtype', 'mixer', 'tagger', 'expanded'],
+  { id: 't2', title: 'Hybrid Workshop', blurb: 'sp, sp², sp³: groups → hybrids → shape.', sec: '§8.2', topics: ['why', 'table', 'groups', 'angle', 'reverse', 'howmany', 'atomshape', 'boxes', 'bondtype', 'mixer', 'tagger', 'expanded'],
     ideas: ['Electron groups = bonded atoms + lone pairs. A double or triple bond is <b>one</b> group.', 'Groups = hybrids: 2 → sp (180°), 3 → sp² (120°), 4 → sp³ (109.5°). Lone pairs sit in hybrids too.', 'n atomic orbitals in = n hybrids out. H is never hybridized.'] },
   { id: 't3', title: 'Sigma & Pi', blurb: 'Count σ/π, label overlaps, rotation.', sec: '§8.3', topics: ['count', 'skelcount', 'label', 'labeler', 'pisource', 'rotation', 'resonance', 'boss'],
     ideas: ['Single = 1σ. Double = 1σ + 1π. Triple = 1σ + 2π.', 'σ bonds use hybrids (or H 1s). π bonds use leftover <b>unhybridized p</b> orbitals.', 'A π bond blocks rotation. Resonance spreads π electrons over several atoms.', 'Line drawings hide the H atoms on carbon, but every C–H is still a σ bond.'] },
-  { id: 't4', title: 'MO Builder', blurb: 'Fill MO diagrams, bond order, magnetism.', sec: '§8.4', topics: ['lcao', 'ordering', 'builder', 'read', 'trends', 'ranker', 'ionize', 'theory', 'o2magnet'],
+  { id: 't4', title: 'MO Builder', blurb: 'Fill MO diagrams, bond order, magnetism.', sec: '§8.4', topics: ['lcao', 'ordering', 'moorder', 'builder', 'read', 'paralist', 'trends', 'ranker', 'ionize', 'moconcept', 'theory', 'o2magnet'],
     ideas: ['In phase → bonding MO. Out of phase → antibonding MO* (node between the nuclei).', 'Li₂–N₂: π2p below σ2p. O₂–Ne₂: σ2p below π2p. Count valence electrons and adjust for charge.', 'BO = ½ (bonding − antibonding). Higher BO → shorter, stronger bond. Any unpaired electron → paramagnetic.'] }
 ];
 const SC_GEN = { scHyb: genSCHyb, scAtom: genSCAtom, scBO: genSCBO, count: genCount, skelcount: genSkelCount };
 const generate = t => { const q = (TOPICS[t] ? TOPICS[t].gen : SC_GEN[t])(); q.topic = q.topic || t; return q; };
 /* Daily 5 tiers: 2 easy → 2 medium → 1 hard */
-const TIER = { easy: ['whatbond', 'gallery', 'which', 'why', 'table', 'pisource', 'rotation', 'lcao', 'ordering', 'theory'], medium: ['pecurve', 'strength', 'groups', 'angle', 'boxes', 'bondtype', 'mixer', 'count', 'skelcount', 'label', 'resonance', 'read', 'trends', 'ranker'], hard: ['tagger', 'labeler', 'builder', 'ionize', 'boss', 'o2magnet'] };
+const TIER = { easy: ['whatbond', 'gallery', 'which', 'why', 'table', 'reverse', 'pisource', 'rotation', 'lcao', 'ordering', 'theory', 'moconcept'], medium: ['pecurve', 'strength', 'groups', 'angle', 'howmany', 'atomshape', 'paralist', 'moorder', 'boxes', 'bondtype', 'mixer', 'count', 'skelcount', 'label', 'resonance', 'read', 'trends', 'ranker'], hard: ['tagger', 'labeler', 'builder', 'ionize', 'boss', 'o2magnet'] };
 if (typeof module !== 'undefined') module.exports = { boxBank, checkRoles, checkBondType, genBondType, refDiagram, checkMixer, checkRank, genSCHyb, genSCAtom, genSCBO, normHyb, TIER, OPTS, parseSmi, layoutComp, skelInfo, SKEL, BOSS, checkLabeler, checkTapcurve, MOLS, MULTI, info, electronsOK, multiSpec, sigmaPi, moAnalyze, moLevels, moFill, aoFill, checkMO, checkAO, checkBoxes, BOXCASES, TOPICS, TILES, generate, ANGLE, scSpec, molSvg, MO_SPECIES, lpAngles };
 /*LOGIC-END*/
 </script>
@@ -1697,7 +1846,7 @@ const today = () => dayKey(new Date()), yesterday = () => { const d = new Date()
 function sharedStreak() { let s = {}; try { s = JSON.parse(localStorage.getItem(STREAK_KEY) || '{}') || {}; } catch (e) {} if (s.last && s.last !== today() && s.last !== yesterday()) return Object.assign({}, s, { streak: 0 }); return Object.assign({ streak: 0, best: 0 }, s); }
 function sharedStreakDone() { const s = sharedStreak(); if (s.last === today()) return s; s.streak = s.last === yesterday() ? (s.streak || 0) + 1 : 1; s.last = today(); s.best = Math.max(s.best || 0, s.streak); s.days = Object.assign({}, s.days, { [today()]: 1 }); const keep = Object.keys(s.days).sort().slice(-60); s.days = Object.fromEntries(keep.map(k => [k, 1])); try { localStorage.setItem(STREAK_KEY, JSON.stringify(s)); } catch (e) {} return s; }
 const faceoffOpen = () => tileC(P, 't2') >= 5 && tileC(P, 't4') >= 5;
-const CH_PLAN = ['which', 'gallery', 'strength', 'skelcount', 'boss', 'groups', 'angle', 'boxes', 'tagger', 'count', 'label', 'builder', 'ionize', 'trends', 'read', 'resonance', 'pecurve'];
+const CH_PLAN = ['howmany', 'atomshape', 'paralist', 'moorder', 'which', 'gallery', 'strength', 'skelcount', 'boss', 'groups', 'angle', 'boxes', 'tagger', 'count', 'label', 'builder', 'ionize', 'trends', 'read', 'resonance', 'pecurve'];
 
 /* mascot: a p orbital (blue and coral lobes, node at the waist) */
 /* art: use the game's own files in assets/ when they exist (see ASSETS.md); otherwise fall back to the drawings and brand badges */
