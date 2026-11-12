@@ -303,6 +303,22 @@ main.panel::before{content:'';position:absolute;left:0;right:0;top:0;height:7px;
 .chip{border-width:2px}.chip.on{background:var(--tcb);border-color:var(--tc);color:var(--tc)}.chip.on::before{background-color:var(--tc);border-color:var(--tc)}
 .xpbar span{background:linear-gradient(90deg,#e0577f,#9b5de5,#3a7fc4,#1f9a63)}
 .stat.rank{background:linear-gradient(135deg,#f3eefe,#fdeef3)}
+/* Orbital Studio */
+svg.studio .oatom{cursor:pointer}svg.studio .oatom:focus{outline:none}svg.studio .oatom:focus circle,svg.studio .oatom.sel circle{stroke:#5b4fd1;stroke-width:3.5}
+svg.studio .oatom.bad circle{stroke:#c4475d;stroke-width:3.5;fill:#fdedf0}
+.palette{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:8px 0}
+.ocard{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:64px;min-height:70px;border:2px solid var(--line2);border-radius:14px;background:#fff;box-shadow:0 3px 0 var(--line2);padding:6px 8px;font-weight:800;color:#26326a;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
+.ocard svg{width:34px;height:34px}.ocard small{font-size:.72rem;color:var(--faint);font-weight:700}
+.ocard:hover{border-color:var(--tc,var(--accent))}
+.oghost{position:fixed;z-index:3000;pointer-events:none;transform:translate(-50%,-50%) scale(1.05);opacity:.9;box-shadow:0 10px 24px #1f2a4440}
+.orows{display:grid;gap:6px;margin-top:6px}
+.orow2{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border:2px solid var(--line);border-radius:12px;padding:6px 10px;background:#fbfbfe}
+.orow2.sel{border-color:var(--accent)}.orow2.bad{border-color:#d4677a;background:var(--rose)}
+.orow2 .oname{font-weight:800;min-width:74px;cursor:pointer;border:0;background:none;text-align:left;padding:6px 2px;min-height:40px}
+.ochip{border:2px solid var(--line2);background:#fff;border-radius:99px;padding:4px 10px;min-height:36px;font-weight:800;color:#3d4a73}
+.ochip::after{content:' ×';color:var(--faint)}
+.orow2 .onone{color:var(--faint);font-size:.88rem;font-style:italic}
+@media(max-width:560px){.palette{gap:6px}.ocard{min-width:58px;min-height:62px;padding:4px}.ocard svg{width:26px;height:26px}.ocard small{font-size:.6rem}svg.studio{max-width:none!important}}
 /* collapsed topic picker */
 .topicbox{margin-top:12px;background:#fff;border:2px solid var(--line2);border-radius:16px;box-shadow:0 3px 0 var(--line2)}
 .topicbox>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:11px 16px;min-height:50px;font-family:var(--font-display);font-weight:600;font-size:1.05rem}
@@ -1743,6 +1759,135 @@ const T4_CONCEPT = [
     ['None: B₂ uses only 2s orbitals', false, 'B₂’s bonding electrons are in the π2p orbitals.', 'mo-count']] }
 ];
 const genMOConcept = () => staticQ('moconcept', Object.assign({ tip: 'Unpaired electrons → paramagnetic. n AOs → n MOs. Electron energy decides ionization.' }, drawBag('t4con', T4_CONCEPT)));
+/* ================= v8: Orbital Studio: place orbitals on atoms in 3D, then label the overlaps ================= */
+/* Oblique 3D view: x to the right (the internuclear axis), y up, z toward the viewer (drawn down-left). */
+const ST_U = 104, ST_Z = [0.52, 0.44];
+const stProj = (x, y, z) => ({ x: (x - z * ST_Z[0]) * ST_U, y: (-y + z * ST_Z[1]) * ST_U });
+const stDir = (d) => { const px = d[0] - d[2] * ST_Z[0], py = -d[1] + d[2] * ST_Z[1], l = Math.hypot(px, py); return { ux: l ? px / l : 0, uy: l ? py / l : -1, l }; };
+const TET = [[0, 1, 0], [0.943, -0.333, 0], [-0.471, -0.333, 0.816], [-0.471, -0.333, -0.816]].map(([x, y, z]) => { const t = 35 * Math.PI / 180; return [x * Math.cos(t) + z * Math.sin(t), y, -x * Math.sin(t) + z * Math.cos(t)]; });   /* turned 35° so no H hides behind the center */
+const ORB_DIR = { px: [1, 0, 0], py: [0, 1, 0], pz: [0, 0, 1] };
+const ORB_LAB = { s: 's', px: 'pₓ', py: 'p<sub>y</sub>', pz: 'p<sub>z</sub>', sp: 'sp', sp2: 'sp²', sp3: 'sp³' };
+const ORB_TXT = { s: 's', px: 'px', py: 'py', pz: 'pz', sp: 'sp', sp2: 'sp2', sp3: 'sp3' };
+const HYB_N = { sp: 2, sp2: 3, sp3: 4 };
+/* each molecule: atoms [el, x, y, z], bonds [a, b, order], lone-pair directions for hybrid lone pairs, accepted orbital sets for non-H atoms */
+const STUDIO = [
+  { f: 'H2', atoms: [['H', -0.55, 0, 0], ['H', 0.55, 0, 0]], bonds: [[0, 1, 1]], sets: {} },
+  { f: 'HF', atoms: [['H', -0.6, 0, 0], ['F', 0.6, 0, 0]], bonds: [[0, 1, 1]], sets: { 1: [['px']] } },
+  { f: 'HCl', atoms: [['H', -0.65, 0, 0], ['Cl', 0.65, 0, 0]], bonds: [[0, 1, 1]], sets: { 1: [['px']] } },
+  { f: 'F2', atoms: [['F', -0.65, 0, 0], ['F', 0.65, 0, 0]], bonds: [[0, 1, 1]], sets: { 0: [['px']], 1: [['px']] } },
+  { f: 'BeH2', atoms: [['H', -1.1, 0, 0], ['Be', 0, 0, 0], ['H', 1.1, 0, 0]], bonds: [[0, 1, 1], [1, 2, 1]], sets: { 1: [['sp']] } },
+  { f: 'CH4', atoms: [['C', 0, 0, 0], ...TET.map(d => ['H', d[0] * 1.05, d[1] * 1.05, d[2] * 1.05])], bonds: [[0, 1, 1], [0, 2, 1], [0, 3, 1], [0, 4, 1]], sets: { 0: [['sp3']] } },
+  { f: 'NH3', atoms: [['N', 0, 0, 0], ...TET.slice(1).map(d => ['H', d[0] * 1.05, d[1] * 1.05, d[2] * 1.05])], bonds: [[0, 1, 1], [0, 2, 1], [0, 3, 1]], lp: { 0: [TET[0]] }, sets: { 0: [['sp3']] } },
+  { f: 'H2O', atoms: [['O', 0, 0, 0], ['H', 0.86, -0.61, 0], ['H', -0.86, -0.61, 0]], bonds: [[0, 1, 1], [0, 2, 1]], lp: { 0: [[0, 0.577, 0.816], [0, 0.577, -0.816]] }, sets: { 0: [['sp3']] } },
+  { f: 'C2H4', atoms: [['C', -0.72, 0, 0], ['C', 0.72, 0, 0], ['H', -1.32, 0, 1.0], ['H', -1.32, 0, -1.0], ['H', 1.32, 0, 1.0], ['H', 1.32, 0, -1.0]], bonds: [[0, 1, 2], [0, 2, 1], [0, 3, 1], [1, 4, 1], [1, 5, 1]], plane: 'xz', sets: { 0: [['sp2', 'py']], 1: [['sp2', 'py']] } },
+  { f: 'C2H2', atoms: [['H', -1.65, 0, 0], ['C', -0.6, 0, 0], ['C', 0.6, 0, 0], ['H', 1.65, 0, 0]], bonds: [[0, 1, 1], [1, 2, 3], [2, 3, 1]], sets: { 1: [['sp', 'py', 'pz']], 2: [['sp', 'py', 'pz']] } },
+  { f: 'HCN', atoms: [['H', -1.6, 0, 0], ['C', -0.5, 0, 0], ['N', 0.65, 0, 0]], bonds: [[0, 1, 1], [1, 2, 3]], lp: { 2: [[1, 0, 0]] }, sets: { 1: [['sp', 'py', 'pz']], 2: [['sp', 'py', 'pz'], ['px', 'py', 'pz']] } },
+  { f: 'N2', atoms: [['N', -0.6, 0, 0], ['N', 0.6, 0, 0]], bonds: [[0, 1, 3]], lp: { 0: [[-1, 0, 0]], 1: [[1, 0, 0]] }, sets: { 0: [['sp', 'py', 'pz'], ['px', 'py', 'pz']], 1: [['sp', 'py', 'pz'], ['px', 'py', 'pz']] } }
+];
+const stKey = set => [...set].sort().join(',');
+function stNeighbors(M, i) { const out = []; M.bonds.forEach(([a, b]) => { if (a === i) out.push(b); if (b === i) out.push(a); }); return out; }
+function stUnit(a, b) { const d = [b[1] - a[1], b[2] - a[2], b[3] - a[3]], l = Math.hypot(...d); return d.map(v => v / l); }
+/* directions a hybrid set points along: neighbors + lone pairs when the count fits, otherwise a standard layout */
+function stHybDirs(M, i, h) {
+  const n = HYB_N[h], dirs = stNeighbors(M, i).map(j => stUnit(M.atoms[i], M.atoms[j])).concat(((M.lp || {})[i] || []).map(d => { const l = Math.hypot(...d); return d.map(v => v / l); }));
+  if (dirs.length === n) return { dirs, lp: dirs.map((_, k) => k >= stNeighbors(M, i).length) };
+  const std = { sp: [[1, 0, 0], [-1, 0, 0]], sp2: [[1, 0, 0], [-0.5, 0.866, 0], [-0.5, -0.866, 0]], sp3: TET }[h];
+  return { dirs: std, lp: std.map(() => false) };
+}
+/* one lobe: an ellipse pointing along a 3D direction, foreshortened by the view */
+function stLobe(cx, cy, d, len, wid, fill, stroke, off = 0) {
+  const p = stDir(d), L = len * Math.max(p.l, 0.42), ang = Math.atan2(p.uy, p.ux) * 180 / Math.PI;
+  const mx = cx + p.ux * (L + off), my = cy + p.uy * (L + off);
+  return { z: d[2], svg: `<ellipse cx="${mx.toFixed(1)}" cy="${my.toFixed(1)}" rx="${L.toFixed(1)}" ry="${wid}" transform="rotate(${ang.toFixed(1)} ${mx.toFixed(1)} ${my.toFixed(1)})" fill="${fill}" fill-opacity=".72" stroke="${stroke}" stroke-width="1.8"/>` };
+}
+const BLUE = ['#8fb8f0', '#346cc3'], CORAL = ['#f6a99a', '#bf5266'];
+function stOrbitalSvg(M, i, o, P) {
+  const c = P[i], out = [];
+  if (o === 's') out.push({ z: 0, svg: `<circle cx="${c.x}" cy="${c.y}" r="21" fill="${BLUE[0]}" fill-opacity=".72" stroke="${BLUE[1]}" stroke-width="1.8"/>` });
+  else if (ORB_DIR[o]) { const d = ORB_DIR[o]; out.push(stLobe(c.x, c.y, d, 26, 13, ...BLUE, 2), stLobe(c.x, c.y, d.map(v => -v), 26, 13, ...CORAL, 2)); }
+  else {
+    const H = stHybDirs(M, i, o);
+    H.dirs.forEach((d, k) => {
+      out.push(stLobe(c.x, c.y, d.map(v => -v), 8, 7, ...CORAL, 0), stLobe(c.x, c.y, d, 30, 14, ...BLUE, 0));
+      if (H.lp[k]) { const p = stDir(d), L = 30 * Math.max(p.l, 0.42), tx = c.x + p.ux * L * 1.5, ty = c.y + p.uy * L * 1.5; out.push({ z: d[2] + 0.01, svg: `<circle cx="${(tx - p.uy * 4).toFixed(1)}" cy="${(ty + p.ux * 4).toFixed(1)}" r="2.6" fill="#1f2a44"/><circle cx="${(tx + p.uy * 4).toFixed(1)}" cy="${(ty - p.ux * 4).toFixed(1)}" r="2.6" fill="#1f2a44"/>` }); }
+    });
+  }
+  return out;
+}
+/* overlaps: one σ on each bond axis, plus π pairs for double/triple bonds (axis from the accepted p orbitals) */
+function stOverlaps(M) {
+  const list = [];
+  M.bonds.forEach(([a, b, o], bi) => {
+    list.push({ bond: bi, a, b, kind: 'σ' });
+    if (o > 1) { const s0 = (M.sets[a] || M.sets[b])[0], axes = s0.filter(x => x === 'py' || x === 'pz').slice(0, o - 1); axes.forEach(ax => list.push({ bond: bi, a, b, kind: 'π', axis: ax })); }
+  });
+  return list;
+}
+function studioSvg(M, w, o = {}) {
+  const P = M.atoms.map(([, x, y, z]) => stProj(x, y, z));
+  const xs = P.map(p => p.x), ys = P.map(p => p.y);
+  const x0 = Math.min(...xs) - 80, x1 = Math.max(...xs) + 80, y0 = Math.min(...ys) - 88, y1 = Math.max(...ys) + 92;
+  let back = '', lobes = [], front = '';
+  /* internuclear axis + axis gizmo */
+  const ax0 = Math.min(...xs) - 70, ax1 = Math.max(...xs) + 70;
+  back += `<path d="M${ax0} 0H${ax1}" stroke="#8a93ab" stroke-width="1.6" stroke-dasharray="6 5"/><text x="${ax0}" y="${y0 + 14}" font-size="12" font-weight="700" fill="#646c82">- - ${M.atoms.every(a => !a[2] && !a[3]) ? 'internuclear axis (x)' : 'x axis'}</text>`;
+  const gx = x0 + 34, gy = y1 - 30, arr = (dx, dy, lab, col) => `<path d="M${gx} ${gy}l${dx} ${dy}" stroke="${col}" stroke-width="2.4" marker-end="url(#stArr)"/><text x="${gx + dx * 1.28}" y="${gy + dy * 1.28 + 4}" text-anchor="middle" font-size="13" font-weight="800" fill="${col}">${lab}</text>`;
+  back += `<defs><marker id="stArr" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs>` + arr(32, 0, 'x', '#c4475d') + arr(0, -32, 'y', '#2f8a64') + arr(-20, 13, 'z', '#346cc3');
+  /* bonds as thin lines */
+  M.bonds.forEach(([a, b]) => { back += `<line x1="${P[a].x}" y1="${P[a].y}" x2="${P[b].x}" y2="${P[b].y}" stroke="#b9bfd3" stroke-width="2"/>`; });
+  /* orbitals placed (or the answer) */
+  M.atoms.forEach((_, i) => { (w.sets[i] || []).forEach(orb => { lobes = lobes.concat(stOrbitalSvg(M, i, orb, P)); }); });
+  lobes.sort((p, q) => p.z - q.z);
+  /* overlaps (step 2): glow + number */
+  if (o.overlaps) o.overlaps.forEach((ov, k) => {
+    const A = P[ov.a], B = P[ov.b], mx = (A.x + B.x) / 2, my = (A.y + B.y) / 2, mark = o.marks && o.marks[k];
+    let pts;
+    let bx, by;
+    if (ov.kind === 'σ') { const d = stUnit(M.atoms[ov.a], M.atoms[ov.b]), p = stDir(d), ang = Math.atan2(p.uy, p.ux) * 180 / Math.PI; front += `<ellipse cx="${mx}" cy="${my}" rx="17" ry="9" transform="rotate(${ang.toFixed(1)} ${mx} ${my})" fill="#ffd36b" fill-opacity=".85" stroke="#d39b28" stroke-width="2"/>`; bx = mx - p.uy * 24; by = my + p.ux * 24; if (by < my) { bx = mx + p.uy * 24; by = my - p.ux * 24; } bx += p.ux * 16; by += p.uy * 16; }
+    else { const p = stDir(ORB_DIR[ov.axis]), off = 40 * Math.max(p.l, 0.5); [[1], [-1]].forEach(([sg]) => { const x = mx + sg * p.ux * off, y = my + sg * p.uy * off; front += `<ellipse cx="${x}" cy="${y}" rx="22" ry="8" fill="#ffd36b" fill-opacity=".8" stroke="#d39b28" stroke-width="2"/>`; }); bx = mx + p.ux * (off + 26); by = my + p.uy * (off + 26); }
+    const cls = mark ? ' ' + mark : '';
+    front += `<g class="tapbond${o.sel === k ? ' sel' : ''}${cls}" data-ovl="${k}" role="button" tabindex="0" aria-label="Overlap ${k + 1}, ${ov.kind === 'σ' ? 'on the axis' : 'off the axis'}"><circle class="tnum${cls}" cx="${bx}" cy="${by}" r="11"/><text class="tnumt" x="${bx}" y="${by + 4}" text-anchor="middle">${k + 1}</text></g>`;
+  });
+  /* atoms on top: tappable drop targets */
+  M.atoms.map((a, i) => i).sort((a, b) => M.atoms[a][3] - M.atoms[b][3]).forEach(i => {
+    const el = M.atoms[i][0], p = P[i], sel = o.sel === i && !o.overlaps;
+    front += `<g class="oatom${sel ? ' sel' : ''}${o.bad && o.bad[i] ? ' bad' : ''}" data-oatom="${i}" ${o.overlaps ? '' : 'role="button" tabindex="0"'} aria-label="${el} atom ${i + 1}${(w.sets[i] || []).length ? ', orbitals: ' + w.sets[i].map(x => ORB_TXT[x]).join(' ') : ', no orbitals yet'}"><circle cx="${p.x}" cy="${p.y}" r="${sel ? 17 : 15}" fill="#fff" stroke="${sel ? '#4b57d1' : '#1f2a44'}" stroke-width="${sel ? 3.5 : 2}"/><text x="${p.x}" y="${p.y + 5}" text-anchor="middle" font-size="14" font-weight="800" fill="#1f2a44">${el}</text></g>`;
+  });
+  return `<svg class="mol studio" viewBox="${x0.toFixed(0)} ${y0.toFixed(0)} ${(x1 - x0).toFixed(0)} ${(y1 - y0).toFixed(0)}" style="width:100%;max-width:${Math.min(560, x1 - x0 + 40).toFixed(0)}px" role="group" aria-label="3D view of ${esc(M.f)}: x to the right along the internuclear axis, y up, z toward you">${back}<g${o.overlaps ? ' opacity=".4"' : ''}>${lobes.map(l => l.svg).join('')}</g>${front}</svg>`;
+}
+/* grading the orbital sets */
+function stCheck(M, sets) {
+  const msgs = [], bad = {}; let slip = '';
+  M.atoms.forEach(([el], i) => {
+    const got = sets[i] || [], key = stKey(got), say = (s, m) => { bad[i] = 1; if (!slip) slip = s; msgs.push(`<b>${el} (atom ${i + 1}):</b> ${m}`); };
+    if (el === 'H') { if (key !== 's') say(got.some(x => HYB_N[x]) ? 'hydrogen-hybridized' : 'h-orbital', got.some(x => HYB_N[x]) ? SLIP['hydrogen-hybridized'] : 'H bonds with its one half-filled 1s orbital: just s.'); return; }
+    const ok = M.sets[i] || [], want = ok[0];
+    if (ok.some(s => stKey(s) === key)) return;
+    if (!got.length) return say('empty', 'Add the orbital(s) this atom uses to bond.');
+    const h = got.find(x => HYB_N[x]), wh = want.find(x => HYB_N[x]);
+    if (got.includes('s') && el !== 'H') return say('s-full', `${el}’s valence s orbital is full (or mixed into hybrids). ${wh ? 'Use hybrid orbitals' : 'It bonds with a half-filled p orbital pointing at its partner'}.`);
+    if (!wh && h) return say('no-hybrid-needed', `In this diatomic, ${el} bonds with its half-filled p orbital along the internuclear axis (pₓ). No hybrids needed.`);
+    if (wh && !h) return say('needs-hybrid', `This ${el} has ${HYB_N[wh]} electron groups, so it uses ${hybH(wh)} hybrid orbitals.`);
+    if (h && wh && h !== wh) { const nb = stNeighbors(M, i).length, lp = ((M.lp || {})[i] || []).length; return say(HYB_N[h] > HYB_N[wh] && M.bonds.some(b => (b[0] === i || b[1] === i) && b[2] > 1) ? 'double-bond-two-groups' : HYB_N[h] < HYB_N[wh] && lp ? 'forgot-lone-pairs' : 'hyb-mismatch', `${el} has ${nb} bonded atom${nb > 1 ? 's' : ''} + ${lp} lone pair${lp === 1 ? '' : 's'} = ${HYB_N[wh]} groups → ${hybH(wh)}, not ${hybH(h)}.`); }
+    if (h === 'sp' && got.includes('px') || h === 'sp2' && (got.includes('px') || (M.plane === 'xz' ? got.includes('pz') : got.includes('py'))) || h === 'sp3' && got.some(x => ORB_DIR[x])) return say('hybrid-count', `${hybH(h)} hybrids already used ${h === 'sp' ? 'pₓ' : h === 'sp2' ? (M.plane === 'xz' ? 'pₓ and p_z' : 'pₓ and p_y') : 'all three p orbitals'}. ` + SLIP['hybrid-count']);
+    const needP = want.filter(x => ORB_DIR[x]), gotP = got.filter(x => ORB_DIR[x]);
+    if (!h && key !== stKey(want)) { if (gotP.length === 1 && gotP[0] !== 'px') return say('pi-orientation', 'Head-on (σ) overlap needs the p orbital that points along the internuclear axis: pₓ.'); return say('p-count', want.length === 1 ? `${el} has one half-filled p orbital; it points at its partner: pₓ.` : 'N has three half-filled p orbitals: pₓ for the σ bond, p_y and p_z for the two π bonds.'); }
+    if (gotP.length < needP.length) return say('missing-pi-p', `This atom makes ${needP.length} π bond${needP.length > 1 ? 's' : ''}: add the unhybridized p orbital${needP.length > 1 ? 's' : ''} that stand${needP.length > 1 ? '' : 's'} perpendicular to the σ bonds.`);
+    if (gotP.length > needP.length) return say('extra-p', 'Only add p orbitals that make π bonds. Extra p orbitals here have nothing to overlap with.');
+    return say('pi-orientation', M.plane === 'xz' ? 'The σ framework lies in the xz plane, so the leftover p orbital for the π bond points along y (p_y), perpendicular to that plane.' : 'Check which p orbitals are left over after hybridizing.');
+  });
+  return msgs.length ? { ok: false, slip, why: msgs.join('<br>'), bad } : { ok: true };
+}
+function genStudio() {
+  const M = drawBag('studio', STUDIO), ovs = stOverlaps(M), first = {};
+  M.atoms.forEach(([el], i) => { first[i] = el === 'H' ? ['s'] : M.sets[i][0]; });
+  const nb = ovs.filter(o => o.kind === 'σ').length, np = ovs.length - nb;
+  const p1 = { kind: 'orbbuild', ask: 'Build the bonding orbitals. Drag an orbital card onto an atom (or tap the atom, then tap a card). Tap a chip below an atom to take it off.', M,
+    answer: studioSvg(M, { sets: first }), hint: 'H: 1s. Diatomic halogens: the half-filled p along the internuclear axis (pₓ). Central atoms: hybrids for their electron groups, plus leftover p orbitals for any π bonds.',
+    solution: M.atoms.map(([el], i) => el === 'H' ? null : `${el} (atom ${i + 1}): ${M.sets[i].map(s => s.map(x => ORB_TXT[x]).join(' + ')).join(' or ')}`).filter(Boolean).join(' · ') || 'Each H uses its 1s orbital.' };
+  const p2 = { kind: 'ovlabel', ask: 'The overlaps are glowing. Mark each numbered overlap σ or π.', M, ovs, answer: ovs.map((o, k) => `${k + 1}: ${o.kind}`).join(' · '), hint: 'Overlap on the internuclear axis (head-on) = σ. Overlap above and below the axis (side by side p) = π.', solution: `${nb} σ${np ? ` and ${np} π` : ''}: every bond has one σ on its axis; each extra bond in a double or triple bond is a π from side-by-side p orbitals.` };
+  return { topic: 'studio', tag: F(M.f), stem: `<p class="lead">Orbital Studio: <b>${F(M.f)}</b></p><p class="note">x points right along the internuclear axis, y points up, z points toward you.</p>`, tip: 'σ: head-on overlap along the internuclear axis. π: side-by-side p orbitals, perpendicular to the axis.', parts: [p1, p2] };
+}
 /* ---------- tiles + topics ---------- */
 const TOPICS = {
   whatbond: { label: 'What makes a bond', tile: 't1', gen: genWhatbond, video: 'hyb' },
@@ -1766,6 +1911,7 @@ const TOPICS = {
   skelcount: { label: 'σ/π in line drawings', tile: 't3', gen: genSkelCount, video: 'hyb' },
   label: { label: 'Label one bond', tile: 't3', gen: genLabel, video: 'hyb' },
   labeler: { label: 'Bond Labeler (every bond)', tile: 't3', gen: genLabeler, video: 'hyb' },
+  studio: { label: 'Orbital Studio (3D)', tile: 't3', gen: genStudio, video: 'hyb' },
   pisource: { label: 'Where π bonds come from', tile: 't3', gen: genPisource, video: 'hyb' },
   rotation: { label: 'Restricted rotation', tile: 't3', gen: genRotation, video: 'hyb' },
   resonance: { label: 'Resonance & delocalized π', tile: 't3', gen: genResonance, video: 'hyb' },
@@ -1788,7 +1934,7 @@ const TILES = [
     ideas: ['A covalent bond = two <b>half-filled</b> orbitals overlapping. The shared pair sits between the nuclei.', 'Bond length = distance at the lowest energy. Bond energy = depth of the energy well (H₂: 74 pm, 436 kJ/mol).', 'Head-on overlap → <b>σ</b> (density on the axis). Side-by-side p overlap → <b>π</b> (above and below).', 'More overlap → stronger bond. In a series of similar bonds (H–Cl, H–Br, H–I), shorter bonds overlap better; a π bond is weaker than a σ bond (OpenStax Table 8.1).'] },
   { id: 't2', title: 'Hybrid Workshop', blurb: 'sp, sp², sp³: groups → hybrids → shape.', sec: '§8.2', topics: ['why', 'table', 'groups', 'angle', 'reverse', 'howmany', 'atomshape', 'boxes', 'bondtype', 'mixer', 'tagger', 'expanded'],
     ideas: ['Electron groups = bonded atoms + lone pairs. A double or triple bond is <b>one</b> group.', 'Groups = hybrids: 2 → sp (180°), 3 → sp² (120°), 4 → sp³ (109.5°). Lone pairs sit in hybrids too.', 'n atomic orbitals in = n hybrids out. H is never hybridized.'] },
-  { id: 't3', title: 'Sigma & Pi', blurb: 'Count σ/π, label overlaps, rotation.', sec: '§8.3', topics: ['count', 'skelcount', 'label', 'labeler', 'pisource', 'rotation', 'resonance', 'boss'],
+  { id: 't3', title: 'Sigma & Pi', blurb: 'Count σ/π, label overlaps, rotation.', sec: '§8.3', topics: ['studio', 'count', 'skelcount', 'label', 'labeler', 'pisource', 'rotation', 'resonance', 'boss'],
     ideas: ['Single = 1σ. Double = 1σ + 1π. Triple = 1σ + 2π.', 'σ bonds use hybrids (or H 1s). π bonds use leftover <b>unhybridized p</b> orbitals.', 'A π bond blocks rotation. Resonance spreads π electrons over several atoms.', 'Line drawings hide the H atoms on carbon, but every C–H is still a σ bond.'] },
   { id: 't4', title: 'MO Builder', blurb: 'Fill MO diagrams, bond order, magnetism.', sec: '§8.4', topics: ['lcao', 'ordering', 'moorder', 'builder', 'read', 'paralist', 'trends', 'ranker', 'ionize', 'moconcept', 'theory', 'o2magnet'],
     ideas: ['In phase → bonding MO. Out of phase → antibonding MO* (node between the nuclei).', 'Li₂–N₂: π2p below σ2p. O₂–Ne₂: σ2p below π2p. Count valence electrons and adjust for charge.', 'BO = ½ (bonding − antibonding). Higher BO → shorter, stronger bond. Any unpaired electron → paramagnetic.'] }
@@ -1796,7 +1942,7 @@ const TILES = [
 const SC_GEN = { scHyb: genSCHyb, scAtom: genSCAtom, scBO: genSCBO, count: genCount, skelcount: genSkelCount };
 const generate = t => { const q = (TOPICS[t] ? TOPICS[t].gen : SC_GEN[t])(); q.topic = q.topic || t; return q; };
 /* Daily 5 tiers: 2 easy → 2 medium → 1 hard */
-const TIER = { easy: ['whatbond', 'gallery', 'which', 'why', 'table', 'reverse', 'pisource', 'rotation', 'lcao', 'ordering', 'theory', 'moconcept'], medium: ['pecurve', 'strength', 'groups', 'angle', 'howmany', 'atomshape', 'paralist', 'moorder', 'boxes', 'bondtype', 'mixer', 'count', 'skelcount', 'label', 'resonance', 'read', 'trends', 'ranker'], hard: ['tagger', 'labeler', 'builder', 'ionize', 'boss', 'o2magnet'] };
+const TIER = { easy: ['whatbond', 'gallery', 'which', 'why', 'table', 'reverse', 'pisource', 'rotation', 'lcao', 'ordering', 'theory', 'moconcept'], medium: ['pecurve', 'strength', 'groups', 'angle', 'howmany', 'atomshape', 'paralist', 'moorder', 'boxes', 'bondtype', 'mixer', 'count', 'skelcount', 'label', 'resonance', 'read', 'trends', 'ranker'], hard: ['studio', 'tagger', 'labeler', 'builder', 'ionize', 'boss', 'o2magnet'] };
 if (typeof module !== 'undefined') module.exports = { boxBank, checkRoles, checkBondType, genBondType, refDiagram, checkMixer, checkRank, genSCHyb, genSCAtom, genSCBO, normHyb, TIER, OPTS, parseSmi, layoutComp, skelInfo, SKEL, BOSS, checkLabeler, checkTapcurve, MOLS, MULTI, info, electronsOK, multiSpec, sigmaPi, moAnalyze, moLevels, moFill, aoFill, checkMO, checkAO, checkBoxes, BOXCASES, TOPICS, TILES, generate, ANGLE, scSpec, molSvg, MO_SPECIES, lpAngles };
 /*LOGIC-END*/
 </script>
@@ -1973,6 +2119,8 @@ function initWork(p) {
   if (p.kind === 'tapcurve') return { r: null };
   if (p.kind === 'labeler') return { sel: p.rows.map(() => ({})), cur: 0, marks: {} };
   if (p.kind === 'mixer') return { in: [] };
+  if (p.kind === 'orbbuild') return { sets: {}, sel: p.M.atoms.findIndex(a => a[0] !== 'H'), bad: {} };
+  if (p.kind === 'ovlabel') return { sel: {}, marks: {}, cur: 0 };
   if (p.kind === 'roles' || p.kind === 'bondtype') return { sel: {}, marks: {} };
   if (p.kind === 'rank') return { order: [] };
   return null;
@@ -2024,6 +2172,18 @@ function partBody(p) {
     return `<div class="figure">${svg}</div><div class="tagrows">${rows}</div><div class="checkrow"><button type="button" class="btn primary" data-check>Check</button></div>`;
   }
   if (p.kind === 'tapcurve') return `<div class="figure">${peSvg({ tap: true, r: w.r })}</div><div class="counter" aria-live="polite">${w.r == null ? 'Tap the curve to place your point.' : `Your point: ${Math.round(w.r)} pm`}</div><div class="checkrow"><button type="button" class="btn nudge" data-nudge="-2" aria-label="Move left 2 pm">◀</button><button type="button" class="btn nudge" data-nudge="2" aria-label="Move right 2 pm">▶</button><button type="button" class="btn primary" data-check>Check</button></div>`;
+  if (p.kind === 'orbbuild') {
+    const M = p.M, firstH = M.atoms.findIndex(a => a[0] === 'H'), rows = M.atoms.map(([el], i) => ({ el, i })).filter(r => r.el !== 'H' || r.i === firstH);
+    const nH = M.atoms.filter(a => a[0] === 'H').length, selH = M.atoms[w.sel] && M.atoms[w.sel][0] === 'H';
+    return `<div class="figure">${studioSvg(M, w, { sel: w.sel, bad: w.bad })}</div>
+      <div class="palette" role="group" aria-label="Orbital cards">${['s', 'px', 'py', 'pz', 'sp', 'sp2', 'sp3'].map(o => `<button type="button" class="ocard" data-orb="${o}" aria-label="Add ${ORB_TXT[o]} to the selected atom">${ORB_ICON[o]}<span>${ORB_LAB[o]}</span><small>${ORB_SUB[o]}</small></button>`).join('')}</div>
+      <div class="orows">${rows.map(r => { const set = w.sets[r.i] || []; return `<div class="orow2${w.sel === r.i || (r.el === 'H' && selH) ? ' sel' : ''}${w.bad[r.i] ? ' bad' : ''}"><button type="button" class="oname" data-oatom="${r.i}">${r.el === 'H' && nH > 1 ? `H atoms (all ${nH})` : `${r.el} (atom ${r.i + 1})`}</button>${set.length ? set.map(o => `<button type="button" class="ochip" data-orbrm="${r.i}:${o}" aria-label="Remove ${ORB_TXT[o]}">${ORB_LAB[o]}</button>`).join('') : '<span class="onone">no orbitals yet</span>'}</div>`; }).join('')}</div>
+      <div class="checkrow"><button type="button" class="btn primary" data-check>Check</button><button type="button" class="btn" data-clear>Clear</button></div>`;
+  }
+  if (p.kind === 'ovlabel') {
+    const M = p.M, sets = {}; M.atoms.forEach(([el], i) => { sets[i] = el === 'H' ? ['s'] : M.sets[i][0]; });
+    return `<div class="figure">${studioSvg(M, { sets }, { overlaps: p.ovs, marks: w.marks, sel: w.cur })}</div><div class="tagrows">${p.ovs.map((ov, k) => `<div class="tagrow${w.marks[k] ? ' ' + w.marks[k] : ''}"><span class="tn">${k + 1}</span><span class="te">${M.atoms[ov.a][0]}–${M.atoms[ov.b][0]}</span><span class="topts">${['σ', 'π'].map(x => `<button type="button" class="topt${w.sel[k] === x ? ' on' : ''}" data-ovk="${k}:${x}" aria-pressed="${w.sel[k] === x}">${x}</button>`).join('')}</span></div>`).join('')}</div><div class="checkrow"><button type="button" class="btn primary" data-check>Check</button></div>`;
+  }
   if (p.kind === 'roles') {
     const arrows = v => v === 2 ? '↑↓' : v === 1 ? '↑' : '';
     const rows = p.rows.map((r, k) => { const id = r.set + r.j, v = w.sel[id] || '', m = w.marks[id]; return `<div class="tagrow lrow${m ? ' ' + m : ''}"><span class="obox ro" aria-hidden="true">${arrows(r.fill)}</span><span class="te">${r.lab}</span><span class="lslots"><label>does <select data-role="${id}" aria-label="${r.lab} ${k + 1} with ${r.fill} electron${r.fill === 1 ? '' : 's'}: role"><option value="">Choose…</option>${p.opts.map(o => `<option${o === v ? ' selected' : ''}>${o}</option>`).join('')}</select></label></span></div>`; }).join('');
@@ -2096,6 +2256,8 @@ function checkCurrent() {
   if (p.kind === 'ao') { const r = checkAO(p.an, state.work.ao); return r.ok ? right() : wrong(r.slip, r.why); }
   if (p.kind === 'mo') { const r = checkMO(p.an, state.work.mo); return r.ok ? right() : wrong(r.slip, r.why); }
   if (p.kind === 'text') { const raw = $('in-t').value.trim(); if (!raw) return setFeedback('info', 'Type an answer first.'); const r = p.check(raw); $('field-t').classList.toggle('good', r.ok); $('field-t').classList.toggle('bad', !r.ok); return r.ok ? right() : wrong(r.slip, r.why); }
+  if (p.kind === 'orbbuild') { const w = state.work; if (!Object.values(w.sets).some(x => x.length)) return setFeedback('info', 'Put orbitals on the atoms first.'); const r = stCheck(p.M, w.sets); w.bad = r.bad || {}; rerenderCurrent(); return r.ok ? right() : wrong(r.slip, r.why); }
+  if (p.kind === 'ovlabel') { const w = state.work; if (p.ovs.some((o, k) => !w.sel[k])) return setFeedback('info', 'Mark every numbered overlap σ or π first.'); const msgs = []; let slip = ''; w.marks = {}; p.ovs.forEach((o, k) => { const ok = w.sel[k] === o.kind; w.marks[k] = ok ? 'ok' : 'no'; if (!ok) { slip = slip || 'sigma-vs-pi'; msgs.push(`<b>Overlap ${k + 1}:</b> ${o.kind === 'σ' ? 'it sits right on the internuclear axis (head-on overlap): σ.' : 'it is above and below the axis, from side-by-side p orbitals: π.'}`); } }); rerenderCurrent(); return msgs.length ? wrong(slip, msgs.join('<br>')) : right(); }
   if (p.kind === 'roles') { const w = state.work; if (p.rows.some(r => !w.sel[r.set + r.j])) return setFeedback('info', 'Choose a job for every orbital first.'); const r = checkRoles(p, w.sel); w.marks = {}; if (!r.ok) { const ms = a => [...a].sort().join('|'); ['hy', 'p'].forEach(set => { const got = p.rows.filter(x => x.set === set).map(x => w.sel[x.set + x.j]); if (ms(got) !== ms(p.box.roles[set])) p.rows.filter(x => x.set === set).forEach(x => w.marks[x.set + x.j] = 'no'); }); } rerenderCurrent(); return r.ok ? right() : wrong(r.slip, r.why); }
   if (p.kind === 'bondtype') { const w = state.work; if (p.rows.some((r, k) => !w.sel[k])) return setFeedback('info', 'Pick σ/π for every numbered bond first.'); const r = checkBondType(p, w.sel); w.marks = {}; p.rows.forEach((x, k) => { w.marks[k] = +w.sel[k] === x.o ? 'ok' : 'no'; }); rerenderCurrent(); return r.ok ? right() : wrong(r.slip, r.why); }
   if (p.kind === 'mixer') { const r = checkMixer(p, mixCounts(state.work)); if (!r) return setFeedback('info', 'Put some orbital cards in the mixer first.'); return r.ok ? right() : wrong(r.slip, r.why); }
@@ -2216,6 +2378,40 @@ function scratchCycle(spec) {
   const [, i, j] = spec.split(':').map(Number); state.scratch[i][j] = (state.scratch[i][j] + 1) % 3;
   scratchRender(`[data-cyc="${spec}"]`);
 }
+/* ---------- Orbital Studio interactions ---------- */
+const ORB_ICON = {
+  s: '<svg viewBox="0 0 34 34"><circle cx="17" cy="17" r="11" fill="#8fb8f0" stroke="#346cc3" stroke-width="2"/></svg>',
+  px: '<svg viewBox="0 0 34 34"><ellipse cx="9" cy="17" rx="8" ry="6" fill="#f6a99a" stroke="#bf5266" stroke-width="1.6"/><ellipse cx="25" cy="17" rx="8" ry="6" fill="#8fb8f0" stroke="#346cc3" stroke-width="1.6"/></svg>',
+  py: '<svg viewBox="0 0 34 34"><ellipse cx="17" cy="9" rx="6" ry="8" fill="#8fb8f0" stroke="#346cc3" stroke-width="1.6"/><ellipse cx="17" cy="25" rx="6" ry="8" fill="#f6a99a" stroke="#bf5266" stroke-width="1.6"/></svg>',
+  pz: '<svg viewBox="0 0 34 34"><ellipse cx="11" cy="22" rx="7" ry="5" transform="rotate(-33 11 22)" fill="#8fb8f0" stroke="#346cc3" stroke-width="1.6"/><ellipse cx="23" cy="12" rx="7" ry="5" transform="rotate(-33 23 12)" fill="#f6a99a" stroke="#bf5266" stroke-width="1.6"/></svg>',
+  sp: '<svg viewBox="0 0 34 34"><ellipse cx="8" cy="17" rx="7" ry="5" fill="#8fb8f0" stroke="#346cc3" stroke-width="1.6"/><ellipse cx="26" cy="17" rx="7" ry="5" fill="#8fb8f0" stroke="#346cc3" stroke-width="1.6"/></svg>',
+  sp2: '<svg viewBox="0 0 34 34">' + [0, 120, 240].map(a => { const cx = 17 + 9 * Math.cos(a * Math.PI / 180), cy = 17 - 9 * Math.sin(a * Math.PI / 180); return `<ellipse cx="${cx}" cy="${cy}" rx="7" ry="4.5" transform="rotate(${-a} ${cx} ${cy})" fill="#8fb8f0" stroke="#346cc3" stroke-width="1.5"/>`; }).join('') + '</svg>',
+  sp3: '<svg viewBox="0 0 34 34">' + [90, 210, 330, 270].map((a, k) => { const r = k === 3 ? 4 : 9, cx = 17 + 9 * Math.cos(a * Math.PI / 180), cy = 17 - r * Math.sin(a * Math.PI / 180); return `<ellipse cx="${cx}" cy="${cy}" rx="${k === 3 ? 5 : 7}" ry="4" transform="rotate(${-a} ${cx} ${cy})" fill="#8fb8f0" stroke="#346cc3" stroke-width="1.5"/>`; }).join('') + '</svg>'
+};
+const ORB_SUB = { s: 'sphere', px: 'along x', py: 'along y', pz: 'along z', sp: '2 hybrids', sp2: '3 hybrids', sp3: '4 hybrids' };
+function studioAdd(i, o) {
+  const p = state.q.parts[state.pi], w = state.work; if (!p || p.kind !== 'orbbuild' || state.done || i == null || i < 0) return;
+  const M = p.M, targets = M.atoms[i][0] === 'H' ? M.atoms.map((a, j) => a[0] === 'H' ? j : -1).filter(j => j >= 0) : [i];
+  const has = (w.sets[i] || []).includes(o);
+  targets.forEach(j => { let set = (w.sets[j] || []).slice(); if (has) set = set.filter(x => x !== o); else { if (HYB_N[o]) set = set.filter(x => !HYB_N[x]); set.push(o); } w.sets[j] = set; delete w.bad[j]; });
+  w.sel = i; rerenderCurrent(`[data-orb="${o}"]`);
+}
+let studioDrag = null;
+function studioPointerDown(e) {
+  const c = e.target.closest && e.target.closest('#parts [data-orb]'); if (!c || state.done) return;
+  studioDrag = { o: c.dataset.orb, x: e.clientX, y: e.clientY, moved: false, ghost: null, card: c };
+}
+function studioPointerMove(e) {
+  const d = studioDrag; if (!d) return;
+  if (!d.moved && Math.hypot(e.clientX - d.x, e.clientY - d.y) > 8) { d.moved = true; d.ghost = d.card.cloneNode(true); d.ghost.classList.add('oghost'); document.body.appendChild(d.ghost); }
+  if (d.moved) { e.preventDefault(); d.ghost.style.left = e.clientX + 'px'; d.ghost.style.top = e.clientY + 'px'; }
+}
+function studioPointerUp(e) {
+  const d = studioDrag; studioDrag = null; if (!d || !d.moved) return;
+  d.ghost.remove(); window.__studioDragged = Date.now();
+  const el = document.elementFromPoint(e.clientX, e.clientY), at = el && el.closest && el.closest('#parts [data-oatom]');
+  if (at) studioAdd(+at.dataset.oatom, d.o);
+}
 function clearWork() { const p = state.q.parts[state.pi]; state.work = initWork(p); rerenderCurrent(); }
 
 /* ---------- Learn mode ---------- */
@@ -2327,6 +2523,11 @@ function bind() {
     const to = t.closest('#parts [data-tagopt]'); if (to) { const [a, o] = to.dataset.tagopt.split(':'); return tagSet(+a, o); }
     const at = t.closest('#parts [data-atom]'); if (at) return tagSelect(+at.dataset.atom);
     const pe = t.closest('#parts [data-pe]'); if (pe) return peTap(e, pe);
+    const ob = t.closest('#parts [data-orb]'); if (ob) { if (window.__studioDragged && Date.now() - window.__studioDragged < 400) return; return studioAdd(state.work && state.work.sel, ob.dataset.orb); }
+    const orm = t.closest('#parts [data-orbrm]'); if (orm) { const [i, o] = orm.dataset.orbrm.split(':'); return studioAdd(+i, o); }
+    const oat = t.closest('#parts [data-oatom]'); if (oat && state.work && state.work.sets) { state.work.sel = +oat.dataset.oatom; return rerenderCurrent(`[data-oatom="${oat.dataset.oatom}"]`); }
+    const ovk = t.closest('#parts [data-ovk]'); if (ovk) { const [k, x] = ovk.dataset.ovk.split(':'); if (state.done) return; state.work.sel[k] = x; state.work.cur = +k; delete state.work.marks[k]; return rerenderCurrent(`[data-ovk="${k}:${x}"]`); }
+    const ovl = t.closest('#parts [data-ovl]'); if (ovl) { const k = ovl.dataset.ovl; state.work.cur = +k; rerenderCurrent(`[data-ovk="${k}:σ"]`); return; }
     const bt = t.closest('#parts [data-btype]'); if (bt) { const [k, o] = bt.dataset.btype.split(':'); if (state.done) return; state.work.sel[k] = o; delete state.work.marks[k]; return rerenderCurrent(`[data-btype="${k}:${o}"]`); }
     const bb = t.closest('#parts [data-bond]'); if (bb && state.q && state.q.parts[state.pi] && state.q.parts[state.pi].kind === 'bondtype') { const k = state.q.parts[state.pi].rows.findIndex(r => r.bond === +bb.dataset.bond); const el = document.querySelector(`#parts [data-btype="${k}:1"]`); if (el) try { el.focus(); el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {} return; }
     const mx = t.closest('#parts [data-mix]'); if (mx) { const w = state.work, i = +mx.dataset.mix; if (state.done || !w) return; w.in = w.in.includes(i) ? w.in.filter(x => x !== i) : w.in.concat(i); return rerenderCurrent(`[data-mix="${i}"]`); }
@@ -2342,6 +2543,10 @@ function bind() {
     if (t.closest('[data-learntry]')) { const topic = state.learn.topic; state.mode = 'practice'; save(); renderChooser(); lastTopic = null; const keep = state.sel; state.sel = new Set([topic]); newQuestion(true); state.sel = keep; renderChooser(); return; }
     const v = t.closest('[data-video]'); if (v) { setVideoFor(v.dataset.video); const pl = $('player'); pl.src = pl.dataset.src; }
   });
+  document.addEventListener('pointerdown', studioPointerDown);
+  document.addEventListener('pointermove', studioPointerMove, { passive: false });
+  document.addEventListener('pointerup', studioPointerUp);
+  document.addEventListener('pointercancel', () => { if (studioDrag && studioDrag.ghost) studioDrag.ghost.remove(); studioDrag = null; });
   document.addEventListener('change', e => {
     const rs = e.target.closest && e.target.closest('#parts [data-role]'); if (rs && state.work && state.work.sel) { state.work.sel[rs.dataset.role] = rs.value; delete state.work.marks[rs.dataset.role]; rs.closest('.lrow').classList.remove('no', 'ok'); return; }
     const sl = e.target.closest && e.target.closest('#parts [data-lslot]'); if (!sl || !state.work || !state.work.sel) return;
