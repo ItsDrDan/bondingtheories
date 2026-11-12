@@ -1,6 +1,6 @@
 # Orbital Overlap (Bonding Theories): art
 
-**Status (Nov 11, 2026):** nothing made yet. The game shows stand-ins until each file exists: an inline drawing of the mascot and the tile icons, and brand-kit badges for achievements. Drop a file in with the exact name below and the game uses it automatically. No code changes needed.
+**Status (Nov 11, 2026):** all 29 images are in (ChatGPT set, checked: right names and sizes, transparent WebP, phase colors match the game). The study hub card image `games/assets/games/bondingtheories.webp` goes in the games repo.
 
 **29 images total: 1 logo + 5 mascot moods + 4 tile icons + 3 mode cards + 16 achievement badges** (+ a copy of the logo for the study hub card).
 
