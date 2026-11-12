@@ -4,7 +4,16 @@ Working title **Orbital Overlap**. Repo/hub label: **Bonding Theories**. Suggest
 
 - **Courses:** CHEM 1A (default) and CHEM 1B review. Link with `?course=1A` or `?course=1B`; progress is saved separately per course on the student's device.
 - **Source:** OpenStax *Chemistry 2e* §7.6 (VSEPR) and §8.1–8.4. Numbers in the game: the H₂ energy curve (74 pm, 436 kJ/mol, §8.1), real angles (NH₃ 107.3°, H₂O 104.5°, §8.2; v1 said 107°, corrected in v2 to match OpenStax), and bond lengths/energies from **Table 8.1** (H–Cl, H–Br, H–I, C–C/C=C/C≡C, C–N/C=N/C≡N, C–O/C=O/C≡O), all checked against openstax.org on 2026-11-11. Bond orders, electron counts, unpaired electrons and magnetism are **computed** from the MO filling, never typed in.
-- **Current file:** `bonding-theories-v18.html` (version in the file name only). Earlier versions are kept here for comparison.
+- **Current file:** `bonding-theories-v19.html` (version in the file name only). Earlier versions are kept here for comparison.
+- **v19 bond energies → ΔH (OpenStax §7.5, 2026-11-12):**
+  - **Two new topics in the Overlap Basics tile** (the tile now reads §7.5, §8.1).
+    - **Bond energies → ΔH:** four steps. (1) Count every bond in the reactants (times the coefficients) and add up ΣD broken. (2) The same for bonds formed in the products. (3) ΔH = ΣD(broken) − ΣD(formed). (4) Exothermic or endothermic.
+    - **Quick ΔH from bond energies:** one typed step. It is also the 11th item in Skill Check Prep, and the question-bank sampler sends it to Daily 5 under chapter 1A-7.
+  - **Data:** bond energies are OpenStax Table 7.3 (Bond Energies, kJ/mol), copied from openstax.org on 2026-11-12. Note that C=O is 741 and C≡O is 1080. The book's own examples come out right with them: H₂ + Cl₂ is −185 kJ, and the ethylene + water Check Your Learning is −35 kJ. Every bond in the reactants is broken and every bond in the products is formed, as in the OpenStax method.
+  - **Reactions:** 21 gas-phase reactions, all balanced and checked by hand. 17 are exothermic (H₂ + halogens, H₂ + O₂, the Haber process, CH₄/CH₃OH/C₃H₈ combustion, hydrogenations, chlorinations, N₂H₄ + O₂, 2 H₂O₂, HCN + 2 H₂) and 4 are endothermic reverses. OpenStax's own worked example (CO + 2 H₂) and Check Your Learning reaction are left out.
+  - **What students see:** each reaction shows Lewis structures. Bond counts come from the drawings, so the two can't disagree. A short D table lists the bonds in the reaction, their single/double/triple versions, and a few distractors. The full Table 7.3 opens in the Hint and in the Bonding Sheet.
+  - **Targeted feedback:** forgetting the coefficient, using the "only bonds that change" shortcut where every bond is asked for (it gives the same ΔH, so the quick version accepts it), and flipping the sign (formed − broken).
+  - Reaction arrows are drawn, per the style guide. The video panel shows "Intro to Thermochemistry".
 - **v18 VSEPR chart in hints, and a hint for every step (2026-11-12):**
   - **VSEPR chart in the Hint box.** The illustrated chart from Lewis Structure Studio (electron groups × lone pairs, with wedge-and-dash drawings) opens inside the Hint for: Hybridize the center, Flat Lewis → real angle, Shape → groups & lone pairs, Shape around an atom, sp³d and sp³d², Hybrid table, Hybrid Mixer and How many are sp²?
     - The drawings were made by running the Lewis game's own chart code, so they match that game. Here they are drawn at one common scale, and angles read 109.5° (the Lewis chart says 109°) to match OpenStax and the rest of this game.
