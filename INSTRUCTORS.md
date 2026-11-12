@@ -4,7 +4,25 @@ Working title **Orbital Overlap**. Repo/hub label: **Bonding Theories**. Suggest
 
 - **Courses:** CHEM 1A (default) and CHEM 1B review. Link with `?course=1A` or `?course=1B`; progress is saved separately per course on the student's device.
 - **Source:** OpenStax *Chemistry 2e* §7.6 (VSEPR) and §8.1–8.4. Numbers in the game: the H₂ energy curve (74 pm, 436 kJ/mol, §8.1), real angles (NH₃ 107.3°, H₂O 104.5°, §8.2; v1 said 107°, corrected in v2 to match OpenStax), and bond lengths/energies from **Table 8.1** (H–Cl, H–Br, H–I, C–C/C=C/C≡C, C–N/C=N/C≡N, C–O/C=O/C≡O), all checked against openstax.org on 2026-11-11. Bond orders, electron counts, unpaired electrons and magnetism are **computed** from the MO filling, never typed in.
-- **Current file:** `bonding-theories-v14.html` (version in the file name only). Earlier versions are kept here for comparison.
+- **Current file:** `bonding-theories-v15.html` (version in the file name only). Earlier versions are kept here for comparison.
+- **v15 audit fixes (2026-11-12):**
+  - **Scoring:** in Daily 5, Skip used to pull a new question without moving the round on, so a slot could be answered twice (a Daily 5 could show "7 / 7") and a miss could be erased. Now, in any round, Skip reveals the rest of the question, counts it as missed, and hides itself once the question is done.
+  - **Orbital roles:** roles are now checked orbital by orbital. Labeling the ↑↓ hybrid "σ bond" and the ↑ hybrid "lone pair" used to pass because the roles were compared as a set.
+  - **Typing:** a format slip no longer counts as wrong; it gets an info message and the streak is kept. Typed hybridizations accept "sp3 hybridized", "sp³ hybrid" and "sp3 orbitals". Numbers accept "+2", E-notation and ×10^. "1,200" is read as a thousands separator, while "2,5" still gets the decimal-comma message.
+  - **XP (per STYLE-GUIDE):** 10 per independent correct answer + 2 per streak step (max +10). 2 XP for a reveal or for finishing after a miss.
+  - **Daily 5:** the +20 bonus, streak and "Daily Habit" badge are tracked for this game, so another game's Daily 5 no longer blocks them. The shared hub streak is still updated. Replays don't add to the count.
+  - **New badges:** On a Roll (5 in a row), Unbreakable Bond (10 in a row), Explorer (Learn, Practice, Challenge, Daily 5, Skill Check Prep).
+  - **Topic changes:** during a round, a topic change is saved for after the round instead of silently ending it. In Practice, the current question stays unless its own topic is turned off. Rounds keep the sp³d/sp³d² setting they started with.
+  - **Chemistry text:**
+    - The I₃⁻ angle feedback no longer says "F atoms".
+    - A 120° pick for XeF₂/I₃⁻ now explains equatorial vs axial positions.
+    - The angle, MO-ordering and ionization Professor Tips no longer state the answer.
+    - The Studio sp³ note about lone pairs shows only when there are lone pairs.
+    - The "hybrids made" diagnosis checks "forgot the s orbital" first.
+    - π "Label one bond" distractors explain σ vs π, and slip tags use tagSlip.
+  - **OpenStax terms:** the Bonding Sheet and the shape-vs-eg slip give the OpenStax names (electron-pair geometry, molecular structure).
+  - **Orbital Studio:** atoms have tap areas of about 50 px on phones (they were 22–30 px), sized so neighbors never overlap. NH₃/CH₄/H₂O stems no longer call x "the internuclear axis", and C₂H₄ says "along the C=C axis". For H₂ the first atom starts selected.
+  - **Small fixes:** the miss count resets on each new question. Skips in strict rounds list the missed steps. Smooth scrolling respects reduced motion everywhere.
 - **v14 Face-Off fixes:** the "Which theory?" He₂ item had "Both VB and MO" as its key, which fought the tip ("bond order → MO") and marked MO answers wrong; it now asks which theory gives He₂ a bond order of 0 (MO). Strict rounds (Face-Off, Challenge, Skill Check, Daily 5) count a question only when every step is right; the end-of-question message now says which step was missed, and the results list shows "2 of 3 steps right; missed step 2" on multi-step misses, with a one-line note that every step must be right.
 - **v13 Orbital Studio:** a truer 3D view. The z direction is foreshortened (cabinet-style) with mild perspective: atoms behind the page (−z) draw smaller and closer in, like a dash; atoms in front (+z) draw a little larger, like a wedge. C2H4 is viewed looking down onto its molecular plane (the textbook picture), so the two ends are symmetric and the 120° trigonal layout reads clearly: back H's small and tucked behind the upper p_y lobes, front H's larger and lower. The axis gizmo follows each molecule's view.
 - **v12 Orbital Studio:** true 3D depth while building. Atoms and lobes are drawn back to front by their z position, so an atom behind the plane (for example the back H's in C2H4) sits behind a p lobe instead of on top of it. Each atom stays above its own lobes, and atoms can still be tapped or dropped onto when they sit behind a lobe. In the overlap-labeling step all atoms stay on top so the numbered markers are easy to read.
