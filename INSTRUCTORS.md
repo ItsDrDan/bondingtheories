@@ -4,7 +4,8 @@ Working title **Orbital Overlap**. Repo/hub label: **Bonding Theories**. Suggest
 
 - **Courses:** CHEM 1A (default) and CHEM 1B review. Link with `?course=1A` or `?course=1B`; progress is saved separately per course on the student's device.
 - **Source:** OpenStax *Chemistry 2e* §7.6 (VSEPR) and §8.1–8.4. Numbers in the game: the H₂ energy curve (74 pm, 436 kJ/mol, §8.1), real angles (NH₃ 107.3°, H₂O 104.5°, §8.2; v1 said 107°, corrected in v2 to match OpenStax), and bond lengths/energies from **Table 8.1** (H–Cl, H–Br, H–I, C–C/C=C/C≡C, C–N/C=N/C≡N, C–O/C=O/C≡O), all checked against openstax.org on 2026-11-11. Bond orders, electron counts, unpaired electrons and magnetism are **computed** from the MO filling, never typed in.
-- **Current file:** `bonding-theories-v4.html` (version in the file name only). v3 is live in `ItsDrDan/bondingtheories`; earlier versions are kept here for comparison.
+- **Current file:** `bonding-theories-v5.html` (version in the file name only). Earlier versions are kept here for comparison.
+- **v5 look and topic picker:** colors match the Study Hub / MCAT hub (pastel gradient background, rainbow title, chunky cards and buttons with a solid bottom edge). Each tile has its own color (Overlap Basics blue, Hybrid Workshop green, Sigma & Pi pink, MO Builder orange), and questions take their tile's color. Tapping a tile turns on **all** of its topics (including sp³d/sp³d² and the boss molecules); the topic list sits collapsed under "Focus on specific topics" for anyone who wants to narrow it, with a "Turn all topics back on" link.
 - **Art:** see `ASSETS.md` (the brief for ChatGPT). v4 picks up each file automatically from `assets/` once it exists and falls back to the drawings and brand badges until then.
 
 ## Accuracy pass (v4, Nov 11, 2026)

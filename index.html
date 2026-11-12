@@ -261,6 +261,59 @@ table.data{border-collapse:collapse;font-size:.95rem;background:#fff;width:100%}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
 </style>
 <link rel="stylesheet" href="https://itsdrdan.github.io/games/brand/itsdrdan.css">
+<style id="theme">
+/* v5 theme: matches the Study Hub / MCAT hub (soft pastel gradients, rainbow title, chunky cards with a solid bottom edge) */
+:root{--accent:#5b4fd1;--accent-d:#4a3fb8;--accent-soft:#efecfd;--edge:#3f2d8f;--bg:#f7f5fc;--line2:#d9d6ea}
+body{background:radial-gradient(circle at 90% 120px,#e3f0ff 0,transparent 430px),radial-gradient(circle at 4% 30px,#ffe5ee 0,transparent 470px),radial-gradient(circle at 55% 820px,#fff0e0 0,transparent 560px),linear-gradient(180deg,#fbf8ff 0,#f5f6fb 1000px);background-color:#f5f6fb}
+.topbar{background:#fffdfbe8}
+.eyebrow{color:#7a4fc9}
+.intro h1 .t1{color:var(--ink)}
+.intro h1 .t2{background:linear-gradient(90deg,#e0577f,#9b5de5 45%,#3a7fc4 75%,#1f9a63);-webkit-background-clip:text;background-clip:text;color:transparent}
+.howto li{border:2px solid var(--line2);box-shadow:0 3px 0 var(--line2)}.howto i{background:linear-gradient(135deg,#9b5de5,#5b4fd1)}
+.stepnum{background:linear-gradient(135deg,#9b5de5,#5b4fd1)}
+.seg{background:#ece9f8}.seg button.active{background:var(--accent);box-shadow:0 3px 0 var(--edge)}
+.tb-btn{border:2px solid var(--line2);box-shadow:0 3px 0 var(--line2);border-radius:999px}
+.cat{--tc:#5b4fd1;--tcb:#efecfd;--tcl:#d4cff3;border:2px solid var(--tcl);box-shadow:0 5px 0 var(--tcl);transition:transform .12s,box-shadow .12s,border-color .12s}
+.cat:hover{transform:translateY(-2px);border-color:var(--tc)}
+.cat.on{border-color:var(--tc);background:linear-gradient(180deg,var(--tcb),#fff 75%);box-shadow:0 5px 0 var(--tc)}
+.cat.on .tick{background:var(--tc);border-color:var(--tc)}
+.cat small{color:var(--muted)}
+.mode-switch button{border:2px solid var(--line2);box-shadow:0 4px 0 var(--line2);transition:transform .12s}
+.mode-switch button:hover{transform:translateY(-2px)}
+.mode-switch button.active{border-color:var(--accent);background:linear-gradient(135deg,#f3f0ff,#fff);box-shadow:0 4px 0 var(--edge)}
+.special{border:2px solid #ecd9a4;box-shadow:0 4px 0 #ecd9a4;transition:transform .12s}.special:hover{transform:translateY(-2px)}
+.special.on{border-color:var(--accent);box-shadow:0 4px 0 var(--edge)}.special.locked{border-color:var(--line2);box-shadow:0 4px 0 var(--line2)}
+.panel{border:2px solid var(--line2);box-shadow:0 5px 0 var(--line2)}
+main.panel{position:relative;overflow:hidden}
+main.panel::before{content:'';position:absolute;left:0;right:0;top:0;height:7px;background:linear-gradient(90deg,#e0577f,#9b5de5 40%,#3a7fc4 70%,#1f9a63)}
+.stem{background:#fff;border:2px solid var(--line)}
+.btn{border:2px solid var(--line2);box-shadow:0 3px 0 var(--line2);border-radius:14px;transition:transform .1s}
+.btn:active,.choice:active:not(:disabled),.topt:active,.chip:active{transform:translateY(2px);box-shadow:none}
+.btn.primary{border:0;border-radius:999px;box-shadow:0 4px 0 var(--edge)}
+.btn.pulse{box-shadow:0 3px 0 var(--amber-line)}
+.choice{border:2px solid var(--line2);box-shadow:0 3px 0 var(--line2);border-radius:14px}
+.choice:hover:not(:disabled){border-color:var(--tc,var(--accent));background:var(--tcb,var(--accent-soft))}
+.choice.right{box-shadow:0 3px 0 #3a9a71}.choice.wrong{box-shadow:0 3px 0 #d4677a}
+.part.current{border-color:var(--tc,#8b95ee);box-shadow:0 4px 0 var(--tcl,#d4cff3)}
+.tag{background:var(--tcb,#f2f3f8);color:var(--tc,var(--muted))}
+.tipbox,.feedback{border-width:2px}
+.field input{border-width:2px}
+.topt{border-width:2px;box-shadow:0 2px 0 var(--line2)}.topt.on{background:var(--tc,var(--accent));border-color:var(--tc,var(--accent))}
+.tagrow{border-width:2px}
+.chip{border-width:2px}.chip.on{background:var(--tcb);border-color:var(--tc);color:var(--tc)}.chip.on::before{background-color:var(--tc);border-color:var(--tc)}
+.xpbar span{background:linear-gradient(90deg,#e0577f,#9b5de5,#3a7fc4,#1f9a63)}
+.stat.rank{background:linear-gradient(135deg,#f3eefe,#fdeef3)}
+/* collapsed topic picker */
+.topicbox{margin-top:12px;background:#fff;border:2px solid var(--line2);border-radius:16px;box-shadow:0 3px 0 var(--line2)}
+.topicbox>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:11px 16px;min-height:50px;font-family:var(--font-display);font-weight:600;font-size:1.05rem}
+.topicbox>summary::-webkit-details-marker{display:none}
+.topicbox>summary::after{content:'▾';margin-left:auto;color:var(--faint);transition:transform .15s}.topicbox[open]>summary::after{transform:rotate(180deg)}
+.topicbox>summary small{font-family:var(--font);font-weight:700;color:var(--muted);font-size:.9rem}
+.topicbox .chips{padding:2px 16px 16px}
+.topicbox .chip-row>span{color:var(--tc)}
+.topicbox .resetsel{align-self:flex-start;border:0;background:none;color:var(--accent-d);font-weight:800;text-decoration:underline;text-underline-offset:3px;padding:6px 2px;min-height:40px}
+</style>
+
 <script src="https://itsdrdan.github.io/games/brand/icons.js" defer></script>
 <script src="https://itsdrdan.github.io/games/brand/embed.js" defer></script>
 <script src="https://itsdrdan.github.io/games/track.js" defer></script>
@@ -284,7 +337,7 @@ table.data{border-collapse:collapse;font-size:.95rem;background:#fff;width:100%}
  <section class="chooser" aria-labelledby="pickTitle">
   <h2 class="pick-title" id="pickTitle"><span class="stepnum">1</span>What do you want to work on? <small>Pick one or more.</small></h2>
   <div class="cats" id="cats"></div>
-  <div class="chips-wrap" id="chipsWrap" hidden><h3 class="pick-title small"><span class="stepnum">2</span>Topics <small>Tap to turn on or off. Mix as many as you like.</small></h3><div class="chips" id="chips"></div></div>
+  <details class="topicbox" id="chipsWrap" hidden><summary>Focus on specific topics <small id="topicCount"></small></summary><div class="chips" id="chips"></div></details>
   <div class="mode-switch" id="modes" role="group" aria-label="Mode">
    <button type="button" data-mode="learn"><span class="ms-ico" data-icon="book" aria-hidden="true"></span><span><b>Learn</b><small>Professor Tips and a worked example, one step at a time.</small></span></button>
    <button type="button" data-mode="practice"><span class="ms-ico" data-icon="pencil" aria-hidden="true"></span><span><b>Practice</b><small>Your topics, with hints and feedback on every slip.</small></span></button>
@@ -1655,6 +1708,8 @@ function mascotHTML(cls, id, src = 'assets/mascot/pip-idle.webp') { return `<img
 function mascotSvg(cls, id) {
   return `<svg class="${cls}" ${id ? `id="${id}"` : ''} viewBox="0 0 120 120" role="img" aria-label="Pip the p orbital" data-mood="idle"><ellipse cx="60" cy="112" rx="22" ry="4" fill="#1f2a44" opacity=".08"/><ellipse cx="60" cy="86" rx="23" ry="24" fill="#f6a99a" stroke="#bf5266" stroke-width="3.5"/><ellipse cx="60" cy="38" rx="28" ry="31" fill="#8fb8f0" stroke="#346cc3" stroke-width="3.5"/><circle cx="49" cy="36" r="5" fill="#1f2a44"/><circle cx="71" cy="36" r="5" fill="#1f2a44"/><circle cx="50.6" cy="34.2" r="1.6" fill="#fff"/><circle cx="72.6" cy="34.2" r="1.6" fill="#fff"/><path d="M51 48q9 7 18 0" fill="none" stroke="#1f2a44" stroke-width="3" stroke-linecap="round"/><circle cx="40" cy="46" r="4" fill="#f28aa3" opacity=".55"/><circle cx="80" cy="46" r="4" fill="#f28aa3" opacity=".55"/><path d="M40 66h40" stroke="#596981" stroke-width="2" stroke-dasharray="3 3"/></svg>`;
 }
+const TILE_COLOR = { t1: ["#2c64a0", "#e3f0ff", "#9cc4ec"], t2: ["#187a4e", "#dcf6ea", "#93d6b6"], t3: ["#b83d63", "#ffe5ee", "#f2a9c0"], t4: ["#a2560d", "#fff0e0", "#f0c393"] };
+const tileVars = id => { const c = TILE_COLOR[id]; return `--tc:${c[0]};--tcb:${c[1]};--tcl:${c[2]}`; };
 const TILE_FILE = { t1: 'cat-overlap', t2: 'cat-hybrid', t3: 'cat-sigmapi', t4: 'cat-mo' };
 const TILE_ART = {
   t1: '<svg class="tile-art" viewBox="0 0 96 96" aria-hidden="true"><circle cx="38" cy="48" r="24" fill="#8fb8f0" fill-opacity=".8" stroke="#346cc3" stroke-width="2.5"/><circle cx="58" cy="48" r="24" fill="#8fb8f0" fill-opacity=".6" stroke="#346cc3" stroke-width="2.5"/><circle cx="38" cy="48" r="3" fill="#1f2a44"/><circle cx="58" cy="48" r="3" fill="#1f2a44"/><path d="M8 48h80" stroke="#8a93ab" stroke-dasharray="4 4"/></svg>',
@@ -1694,10 +1749,12 @@ function setCourse(c) {
 /* ---------- chooser ---------- */
 const catOn = c => c.topics.some(t => state.sel.has(t));
 function renderChooser() {
-  $('cats').innerHTML = TILES.map(c => `<button type="button" class="cat${catOn(c) ? ' on' : ''}" data-cat="${c.id}" aria-pressed="${catOn(c)}"><span class="tick" aria-hidden="true">${ico('check')}</span>${ART_MISS.has(TILE_FILE[c.id]) ? TILE_ART[c.id] : `<img class="tile-art" src="assets/${TILE_FILE[c.id]}.webp" alt="" onerror="ART_MISS.add('${TILE_FILE[c.id]}');this.outerHTML=TILE_ART['${c.id}']">`}<b>${c.title}</b><small>${c.blurb}</small></button>`).join('');
+  $('cats').innerHTML = TILES.map(c => `<button type="button" class="cat${catOn(c) ? ' on' : ''}" data-cat="${c.id}" aria-pressed="${catOn(c)}" style="${tileVars(c.id)}"><span class="tick" aria-hidden="true">${ico('check')}</span>${ART_MISS.has(TILE_FILE[c.id]) ? TILE_ART[c.id] : `<img class="tile-art" src="assets/${TILE_FILE[c.id]}.webp" alt="" onerror="ART_MISS.add('${TILE_FILE[c.id]}');this.outerHTML=TILE_ART['${c.id}']">`}<b>${c.title}</b><small>${c.blurb}</small></button>`).join('');
   const open = TILES.filter(catOn);
   $('chipsWrap').hidden = !open.length;
-  $('chips').innerHTML = open.map(c => `<div class="chip-row"><span>${c.title} · ${c.sec}</span>${c.topics.map(t => { const s = P.topic[t], T = TOPICS[t]; return `<button type="button" class="chip${state.sel.has(t) ? ' on' : ''}" data-topic="${t}" aria-pressed="${state.sel.has(t)}">${T.label}${T.badge ? ` <span class="ctag">${T.badge}</span>` : ''}${s && s.a ? ` <span class="cstat">${s.c}/${s.a}</span>` : ''}</button>`; }).join('')}</div>`).join('');
+  const nOn = open.reduce((n, c) => n + c.topics.filter(t => state.sel.has(t)).length, 0), nAll = open.reduce((n, c) => n + c.topics.length, 0);
+  $('topicCount').textContent = nOn === nAll ? `· all ${nAll} topics on` : `· ${nOn} of ${nAll} topics on`;
+  $('chips').innerHTML = (nOn < nAll ? `<button type="button" class="resetsel" data-allon="1">Turn all topics back on</button>` : '') + open.map(c => `<div class="chip-row" style="${tileVars(c.id)}"><span>${c.title} · ${c.sec}</span>${c.topics.map(t => { const s = P.topic[t], T = TOPICS[t]; return `<button type="button" class="chip${state.sel.has(t) ? ' on' : ''}" data-topic="${t}" aria-pressed="${state.sel.has(t)}">${T.label}${T.badge ? ` <span class="ctag">${T.badge}</span>` : ''}${s && s.a ? ` <span class="cstat">${s.c}/${s.a}</span>` : ''}</button>`; }).join('')}</div>`).join('');
   const curMode = state.ch ? state.ch.kind : state.mode;
   document.querySelectorAll('#modes button').forEach(b => { b.classList.toggle('active', b.dataset.mode === curMode); b.setAttribute('aria-pressed', b.dataset.mode === curMode); });
   const st = sharedStreak(), doneToday = st.last === today(), foOpen = faceoffOpen();
@@ -1708,7 +1765,7 @@ function renderChooser() {
 }
 function toggleCat(id) {
   const c = TILES.find(x => x.id === id);
-  if (catOn(c)) c.topics.forEach(t => state.sel.delete(t)); else c.topics.filter(t => t !== 'expanded' && t !== 'boss').forEach(t => state.sel.add(t));
+  if (catOn(c)) c.topics.forEach(t => state.sel.delete(t)); else c.topics.forEach(t => state.sel.add(t));
   afterSelect();
 }
 function toggleTopic(t) { state.sel.has(t) ? state.sel.delete(t) : state.sel.add(t); afterSelect(); }
@@ -1773,7 +1830,7 @@ function newQuestion(focus) {
   $('emptyBox').hidden = true; $('learnBox').hidden = true; $('reportBox').hidden = true; $('playArea').hidden = false; $('skipBtn').hidden = false;
   const T = TOPICS[q.topic], tile = TILES.find(t => t.id === T.tile);
   $('playTitle').textContent = state.ch ? ROUND[state.ch.kind].title : state.sel.size > 1 ? 'Mixed practice' : T.label;
-  $('tileTag').textContent = tile.title + ' · ' + tile.sec; $('topicTag').innerHTML = T.label + (q.tag && q.tag !== T.label ? ' · ' + q.tag : '');
+  $('playArea').setAttribute('style', tileVars(tile.id)); $('tileTag').textContent = tile.title + ' · ' + tile.sec; $('topicTag').innerHTML = T.label + (q.tag && q.tag !== T.label ? ' · ' + q.tag : '');
   $('quizTag').hidden = !state.ch; $('quizBar').hidden = !state.ch;
   if (state.ch) { $('quizTag').textContent = `Question ${state.ch.i + 1} of ${state.ch.plan.length}`; $('quizBar').firstElementChild.style.width = (state.ch.i / state.ch.plan.length * 100) + '%'; }
   $('stem').innerHTML = q.stem || '';
@@ -2093,6 +2150,7 @@ function bind() {
   document.addEventListener('click', e => {
     const t = e.target;
     const cat = t.closest('[data-cat]'); if (cat) return toggleCat(cat.dataset.cat);
+    if (t.closest('[data-allon]')) { TILES.filter(catOn).forEach(c => c.topics.forEach(x => state.sel.add(x))); return afterSelect(); }
     const tp = t.closest('[data-topic]'); if (tp) return toggleTopic(tp.dataset.topic);
     const ch = t.closest('#parts .part.current [data-choice]'); if (ch) return choose(+ch.dataset.choice);
     if (t.closest('#parts [data-check]')) return checkCurrent();
