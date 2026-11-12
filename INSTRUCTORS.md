@@ -4,7 +4,21 @@ Working title **Orbital Overlap**. Repo/hub label: **Bonding Theories**. Suggest
 
 - **Courses:** CHEM 1A (default) and CHEM 1B review. Link with `?course=1A` or `?course=1B`; progress is saved separately per course on the student's device.
 - **Source:** OpenStax *Chemistry 2e* §7.6 (VSEPR) and §8.1–8.4. Numbers in the game: the H₂ energy curve (74 pm, 436 kJ/mol, §8.1), real angles (NH₃ 107.3°, H₂O 104.5°, §8.2; v1 said 107°, corrected in v2 to match OpenStax), and bond lengths/energies from **Table 8.1** (H–Cl, H–Br, H–I, C–C/C=C/C≡C, C–N/C=N/C≡N, C–O/C=O/C≡O), all checked against openstax.org on 2026-11-11. Bond orders, electron counts, unpaired electrons and magnetism are **computed** from the MO filling, never typed in.
-- **Current file:** `bonding-theories-v16.html` (version in the file name only). Earlier versions are kept here for comparison.
+- **Current file:** `bonding-theories-v17.html` (version in the file name only). Earlier versions are kept here for comparison.
+- **v17 missed steps and Skill Check variety (2026-11-12):**
+  - **Missed steps no longer look right.** In strict rounds (Skill Check, Challenge, Daily 5, Face-Off), a missed step used to be redrawn as a green ✓ box holding the correct answer, and the "Not quite" message was replaced by "Done." A student who typed 1 for the F₂⁻ bond order saw a green box with 0.5 in it. Grading was right; the display was misleading.
+    - A missed step now shows in coral as "Step N: missed". It shows the student's answer with only the wrong boxes struck through (for example "Bond order: ~~1~~ · Unpaired electrons: 1 ✓"), the reason, then the correct answer.
+    - A revealed step (Show step) shows in lavender as "answer shown".
+  - **Notation pass:** a final pass formats all text before it goes on the page.
+    - MO labels get subscripts: σ<sub>2s</sub>, σ*<sub>2p</sub>, π*<sub>2p</sub>. This covers text, choices and the MO diagram labels.
+    - p<sub>x</sub>, p<sub>y</sub>, p<sub>z</sub> all use one style. Orbital Studio feedback used to show "p_y" and "p_z" with literal underscores, and pₓ used a Unicode subscript unlike p<sub>y</sub>/p<sub>z</sub>.
+    - Any plain-text sp2/sp3/sp3d2 gets superscripts.
+    - A browser scan of every topic found nothing left unformatted. It covered questions, wrong-answer feedback, hints, shown steps, Orbital Studio feedback, Learn mode and the Bonding Sheet.
+  - **Typed hybridization answers superscript as you type:** sp3 → sp³, sp^2 → sp², sp3d2 → sp³d². The cursor stays in place.
+  - **Skill Check Prep: one of each of ten typed question kinds per round.** It used to be 6 kinds, with bond order, hybridize-the-center and hybridize-an-atom each appearing twice. The ten kinds are:
+    - count σ/π, σ/π in line drawings, "how many are sp²", shape → groups and lone pairs
+    - typed bond order + unpaired electrons, typed central-atom hybridization, typed hybridization of a numbered atom
+    - new: typed end-atom hybridization (C=O oxygen, C≡N nitrogen), typed "hybrids made / p left over", typed MO electron count
 - **v16 end atoms and whole-bond descriptions (2026-11-12):**
   - **New Hybrid Workshop topic, "End atoms: C=O oxygen, C≡N nitrogen":** asks the hybridization of an O or N at the end of a double or triple bond, using the same rule as any atom (bonded atoms + lone pairs). For example, a C=O oxygen is 1 + 2 = 3 groups → sp², and a C≡N nitrogen is 1 + 1 = 2 → sp. About a third of these questions are typed instead of multiple choice.
     - Molecules: 15 end atoms from the game's molecules (N₂, HCN, CO₂, CH₂O, CH₃CN, HCOOH, HONO, CH₃COOH, acrylonitrile, Cl₂CO, ClNO) plus four molecules added for these two topics only: acetaldehyde, acetone, formamide and urea.

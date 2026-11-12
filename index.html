@@ -98,6 +98,9 @@ main.panel{padding:20px;scroll-margin-top:calc(var(--topbar) + 10px)}
 .part{margin-top:12px;border:1px solid var(--line);border-radius:var(--r-md);padding:12px 14px;background:#fff}
 .part.current{border:2px solid #8b95ee;box-shadow:0 4px 14px #4b57d114}
 .part.done{background:#f3fbf7;border-color:#cbe9db}
+.part.done.missed{background:var(--rose);border-color:var(--rose-line)}.part.done.missed .pnum,.part.done.missed .pans{color:var(--rose-ink)}
+.part.done.shown{background:#f6f3fc;border-color:#ddd3f0}.part.done.shown .pnum{color:#6a55a3}
+.pgiven{font-weight:700;color:var(--rose-ink);margin:2px 0}.pgiven s{opacity:.85}.pwhy{color:var(--rose-ink);font-size:.95rem;margin:2px 0 4px}
 .pnum{font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}.part.done .pnum{color:var(--mint-ink)}
 .ask{font-size:1.14rem;font-weight:700;margin:2px 0 8px;line-height:1.45}
 .part.done .ask{font-size:1rem;margin-bottom:2px}
@@ -686,6 +689,8 @@ function peSvg(o = {}) {
 /* ---------- MO theory: valence orbitals; ordering computed, never typed in ---------- */
 const AV = { H: 1, He: 2, Li: 1, Be: 2, B: 3, C: 4, N: 5, O: 6, F: 7, Ne: 8 };
 const moType = atom => (atom === 'H' || atom === 'He') ? '1s' : ['Li', 'Be', 'B', 'C', 'N'].includes(atom) ? 'low' : 'high';
+/* v17: MO labels shown as σ<sub>2p</sub>, π*<sub>2p</sub> (OpenStax style). Internally the plain label (σ2p) stays the key. */
+const svgMO = lab => String(lab).replace(/^([σπ]\*?)([12][sp])$/, '$1<tspan baseline-shift="sub" font-size="11">$2</tspan>');
 function moLevels(type) {
   const L = (lab, d, anti, blk) => ({ lab, d, anti, blk });
   if (type === '1s') return [L('σ1s', 1, false, 0), L('σ*1s', 1, true, 0)];
@@ -845,8 +850,8 @@ T2_WHY.push(
     ['N is more electronegative than P', false, 'Electronegativity isn’t the reason. N has no valence d orbitals for a 5th hybrid.', 'hyb-why'],
     ['F can’t bond to N', false, 'NF₃ exists, so N–F bonds are fine. N just can’t hold 5 groups.', 'hyb-why'],
     ['P has more valence electrons than N', false, 'Both have 5 valence electrons. The difference is d orbitals in P’s n = 3 shell.', 'hyb-why']] });
-function genWhy() {
-  if (chance(0.45)) {
+function genWhy(numOnly) {
+  if (numOnly || chance(0.45)) {
     const n = rint(1, 3), hyb = ['sp', 'sp2', 'sp3'][n - 1];
     const p = numPart(`An atom mixes <b>one s</b> orbital with <b>${n} p</b> orbital${n > 1 ? 's' : ''}.`, [
       { key: 'h', label: 'Hybrid orbitals made', answer: n + 1, diag: v => v === n ? ['hybrid-count', 'Don’t forget the s orbital. ' + SLIP['hybrid-count']] : v === 1 ? ['hybrid-count', 'Mixing never shrinks the count. ' + SLIP['hybrid-count']] : ['hybrid-count', SLIP['hybrid-count']] },
@@ -1321,7 +1326,7 @@ function moSvg(an, o = {}) {
   const mo = o.mo || an.levels.map(l => Array(l.d).fill(0)); let serial = 0;
   an.levels.forEach((l, i) => {
     mo[i].forEach((v, j) => { const cols = []; for (let e = 0; e < v; e++) { cols.push(serial >= 2 * an.v ? '#7960ae' : serial % 2 === 0 ? '#346cc3' : '#bf5266'); serial++; } const tap = o.edit === 'mo' || o.edit === 'scratch' ? `${o.edit}:${i}:${j}` : ''; s += `<g class="${o.homo === i ? 'homo' : ''}">` + box(bx(xs.M, l.d, j), ys[i], v, '', cols.length === 2 ? cols : [cols[0] || '#1f2a44', '#1f2a44'], tap, `${l.lab} orbital${l.d > 1 ? ' ' + (j + 1) : ''}`) + '</g>'; });
-    s += txt(xs.M, ys[i] + 33, l.lab, '#48576d', 14);
+    s += txt(xs.M, ys[i] + 33, svgMO(l.lab), '#48576d', 14);
   });
   s += txt(xs.M, 34, F(an.f).replace(/<sub>(\d+)<\/sub>/g, '<tspan baseline-shift="sub" font-size="12">$1</tspan>').replace(/<sup>([^<]+)<\/sup>/g, '<tspan baseline-shift="super" font-size="12">$1</tspan>') + ' MOs', '#1f2a44', 17);
   const ax = compact ? 12 : 24;
@@ -1640,7 +1645,7 @@ const T_THEORY = [
 function genTheory() { const it = drawBag('theory', T_THEORY); return { topic: 'theory', tag: 'which theory?', stem: '', tip: 'Shape → VSEPR. Which orbitals overlap → VB (hybrids). Magnetism, bond order of ions, delocalized π → MO.', parts: [choicePart(it.q, THEORY_OPTS.map((t, i) => opt(t, i === it.ok, i === it.ok ? 'Right tool for the job.' : it.why[i], 'theory-choice')), { keep: true, hint: 'Shape → VSEPR. Overlap names → VB. Magnetism and bond order → MO.', solution: THEORY_OPTS[it.ok] + '.' })] }; }
 /* typed answers (Skill Check Prep): no multiple choice */
 const normHyb = s => String(s).toLowerCase().replace(/[²]/g, '2').replace(/[³]/g, '3').replace(/[\s^\-_.]/g, '').replace(/^hybrid/, '').replace(/(hybridi[sz]ed|hybridi[sz]ation|hybrids?|orbitals?)+$/, '');
-function hybText(ask, want, slipFor, sol) { return { kind: 'text', ask, answer: hybH(want), want, check: v => { const n = normHyb(v); if (!/^sp\d?(d\d?)?$/.test(n)) return { ok: false, slip: 'format', why: 'Type a hybridization like sp, sp2 or sp3.' }; return n === want ? { ok: true } : Object.assign({ ok: false }, slipFor(n)); }, hint: 'Count electron groups: 2 → sp, 3 → sp2, 4 → sp3.', solution: sol, note: 'Type sp, sp2, sp3 (sp² and sp^2 work too).' }; }
+function hybText(ask, want, slipFor, sol) { return { kind: 'text', ask, answer: hybH(want), want, check: v => { const n = normHyb(v); if (!/^sp\d?(d\d?)?$/.test(n)) return { ok: false, slip: 'format', why: 'Type a hybridization like sp, sp2 or sp3.' }; return n === want ? { ok: true } : Object.assign({ ok: false }, slipFor(n)); }, hint: 'Count electron groups: 2 → sp, 3 → sp², 4 → sp³.', solution: sol, note: 'Type sp, sp2 or sp3: numbers after p or d turn into superscripts as you type (sp3 → sp³).', hyb: true }; }
 function genSCHyb() {
   const m = drawBag(OPTS.expanded ? 'scHybX' : 'scHyb', MOLS.filter(x => OPTS.expanded || !info(x).expanded)), I = info(m);
   const slipFor = n => { const g = +Object.keys(HYB).find(k => HYB[k] === n); const d = g ? groupSlip(m, g) : ['hyb-mismatch', '']; return { slip: d[0], why: (g ? `${n} fits ${g} groups. ` : '') + (d[1] || `${m.c} has ${I.groups} electron groups.`) }; };
@@ -1681,13 +1686,13 @@ function termBank() {
   return (TERM_BANK = out);
 }
 const BOND_WORD = { 2: 'double', 3: 'triple' };
-function genTermHyb() {
+function genTermHyb(typed) {
   const e = drawBag('termhyb', termBank()), A = e.A, B = e.B, w = BOND_WORD[e.o];
   const groupsTxt = `1 bonded atom + ${A.lp} lone pair${A.lp === 1 ? '' : 's'} = ${A.groups} groups → ${hybH(A.hyb)}`;
   const sol = `${A.el} (atom 1): ${groupsTxt}. The ${w} bond counts as <b>one</b> group. Its leftover ${LEFT_P[A.hyb]} unhybridized 2p orbital${LEFT_P[A.hyb] > 1 ? 's make' : ' makes'} the π bond${e.o === 3 ? 's' : ''} to ${B.el}.`;
   const ask = `What is the hybridization of atom 1, the ${A.el} ${w}-bonded to ${B.el}?`;
   const hint = 'Hybridize an end atom the same way as a central one: count its bonded atoms plus its lone pairs. A double or triple bond is one group.';
-  const part = chance(0.35)
+  const part = typed || chance(0.35)
     ? Object.assign(hybText(`Type the hybridization of atom 1 (the ${A.el} ${w}-bonded to ${B.el}).`, A.hyb, n => { const d = tagSlip(A, n); return { slip: d[0], why: d[1] }; }, sol), { hint })
     : choicePart(ask, ['sp', 'sp2', 'sp3'].map(h => h === A.hyb ? opt(hybH(h), true, groupsTxt + '.') : (d => opt(hybH(h), false, d[1], d[0]))(tagSlip(A, h))), { keep: true, hint, solution: sol });
   return { topic: 'termhyb', tag: `${F(e.M.f)} · ${A.el} ${hybH(A.hyb)}`, stem: `<p class="lead">${molTitle(e.M)}</p><div class="figure">${molSvg(e.S, { nums: { [e.t]: 1 }, label: 'Structure with one end atom numbered' })}</div>`, tip: 'Any atom with lone pairs or bonds can be hybridized, not only the central one. Count its groups the usual way.', parts: [part] };
@@ -1847,7 +1852,7 @@ const stProj = (x, y, z) => { const f = 1 + ST_PERSP * z; return { x: (x - z * S
 const stDir = (d) => { const px = d[0] - d[2] * ST_Z[0], py = -d[1] + d[2] * ST_Z[1], l = Math.hypot(px, py); return { ux: l ? px / l : 0, uy: l ? py / l : -1, l }; };
 const TET = [[0, 1, 0], [0.943, -0.333, 0], [-0.471, -0.333, 0.816], [-0.471, -0.333, -0.816]].map(([x, y, z]) => { const t = 35 * Math.PI / 180; return [x * Math.cos(t) + z * Math.sin(t), y, -x * Math.sin(t) + z * Math.cos(t)]; });   /* turned 35° so no H hides behind the center */
 const ORB_DIR = { px: [1, 0, 0], py: [0, 1, 0], pz: [0, 0, 1] };
-const ORB_LAB = { s: 's', px: 'pₓ', py: 'p<sub>y</sub>', pz: 'p<sub>z</sub>', sp: 'sp', sp2: 'sp²', sp3: 'sp³' };
+const ORB_LAB = { s: 's', px: 'p<sub>x</sub>', py: 'p<sub>y</sub>', pz: 'p<sub>z</sub>', sp: 'sp', sp2: 'sp²', sp3: 'sp³' };
 const ORB_TXT = { s: 's', px: 'px', py: 'py', pz: 'pz', sp: 'sp', sp2: 'sp2', sp3: 'sp3' };
 const HYB_N = { sp: 2, sp2: 3, sp3: 4 };
 /* each molecule: atoms [el, x, y, z], bonds [a, b, order], lone-pair directions for hybrid lone pairs, accepted orbital sets for non-H atoms */
@@ -2011,15 +2016,15 @@ function stCheck(M, sets) {
     if (!got.length) return say('empty', 'Add the orbital(s) this atom uses to bond.');
     const h = got.find(x => HYB_N[x]), wh = want.find(x => HYB_N[x]);
     if (got.includes('s') && el !== 'H') return say('s-full', `${el}’s valence s orbital is full (or mixed into hybrids). ${wh ? 'Use hybrid orbitals' : 'It bonds with a half-filled p orbital pointing at its partner'}.`);
-    if (!wh && h) return say('no-hybrid-needed', `In this diatomic, ${el} bonds with its half-filled p orbital along the internuclear axis (pₓ). No hybrids needed.`);
+    if (!wh && h) return say('no-hybrid-needed', `In this diatomic, ${el} bonds with its half-filled p orbital along the internuclear axis (p<sub>x</sub>). No hybrids needed.`);
     if (wh && !h) return say('needs-hybrid', `This ${el} has ${HYB_N[wh]} electron groups, so it uses ${hybH(wh)} hybrid orbitals.`);
     if (h && wh && h !== wh) { const nb = stNeighbors(M, i).length, lp = ((M.lp || {})[i] || []).length; return say(HYB_N[h] > HYB_N[wh] && M.bonds.some(b => (b[0] === i || b[1] === i) && b[2] > 1) ? 'double-bond-two-groups' : HYB_N[h] < HYB_N[wh] && lp ? 'forgot-lone-pairs' : 'hyb-mismatch', `${el} has ${nb} bonded atom${nb > 1 ? 's' : ''} + ${lp} lone pair${lp === 1 ? '' : 's'} = ${HYB_N[wh]} groups → ${hybH(wh)}, not ${hybH(h)}.`); }
-    if (h === 'sp' && got.includes('px') || h === 'sp2' && (got.includes('px') || (M.plane === 'xz' ? got.includes('pz') : got.includes('py'))) || h === 'sp3' && got.some(x => ORB_DIR[x])) return say('hybrid-count', `${hybH(h)} hybrids already used ${h === 'sp' ? 'pₓ' : h === 'sp2' ? (M.plane === 'xz' ? 'pₓ and p_z' : 'pₓ and p_y') : 'all three p orbitals'}. ` + SLIP['hybrid-count']);
+    if (h === 'sp' && got.includes('px') || h === 'sp2' && (got.includes('px') || (M.plane === 'xz' ? got.includes('pz') : got.includes('py'))) || h === 'sp3' && got.some(x => ORB_DIR[x])) return say('hybrid-count', `${hybH(h)} hybrids already used ${h === 'sp' ? 'p<sub>x</sub>' : h === 'sp2' ? (M.plane === 'xz' ? 'p<sub>x</sub> and p<sub>z</sub>' : 'p<sub>x</sub> and p<sub>y</sub>') : 'all three p orbitals'}. ` + SLIP['hybrid-count']);
     const needP = want.filter(x => ORB_DIR[x]), gotP = got.filter(x => ORB_DIR[x]);
-    if (!h && key !== stKey(want)) { if (gotP.length === 1 && gotP[0] !== 'px') return say('pi-orientation', 'Head-on (σ) overlap needs the p orbital that points along the internuclear axis: pₓ.'); return say('p-count', want.length === 1 ? `${el} has one half-filled p orbital; it points at its partner: pₓ.` : 'N has three half-filled p orbitals: pₓ for the σ bond, p_y and p_z for the two π bonds.'); }
+    if (!h && key !== stKey(want)) { if (gotP.length === 1 && gotP[0] !== 'px') return say('pi-orientation', 'Head-on (σ) overlap needs the p orbital that points along the internuclear axis: p<sub>x</sub>.'); return say('p-count', want.length === 1 ? `${el} has one half-filled p orbital; it points at its partner: p<sub>x</sub>.` : 'N has three half-filled p orbitals: p<sub>x</sub> for the σ bond, p<sub>y</sub> and p<sub>z</sub> for the two π bonds.'); }
     if (gotP.length < needP.length) return say('missing-pi-p', `This atom makes ${needP.length} π bond${needP.length > 1 ? 's' : ''}: add the unhybridized p orbital${needP.length > 1 ? 's' : ''} that stand${needP.length > 1 ? '' : 's'} perpendicular to the σ bonds.`);
     if (gotP.length > needP.length) return say('extra-p', 'Only add p orbitals that make π bonds. Extra p orbitals here have nothing to overlap with.');
-    return say('pi-orientation', M.plane === 'xz' ? 'The σ framework lies in the xz plane, so the leftover p orbital for the π bond points along y (p_y), perpendicular to that plane.' : 'Check which p orbitals are left over after hybridizing.');
+    return say('pi-orientation', M.plane === 'xz' ? 'The σ framework lies in the xz plane, so the leftover p orbital for the π bond points along y (p<sub>y</sub>), perpendicular to that plane.' : 'Check which p orbitals are left over after hybridizing.');
   });
   return msgs.length ? { ok: false, slip, why: msgs.join('<br>'), bad } : { ok: true };
 }
@@ -2029,8 +2034,8 @@ function stAnglePart(M) {
   const set = Object.values(M.sets).map(x => x[0]), hasTriple = M.bonds.some(b => b[2] === 3), hyb = (set.find(s => s.some(x => HYB_N[x])) || []).find(x => HYB_N[x]);
   const why = (ans, a, reasons) => a === ans ? reasons.ok : reasons[a] || `${a} goes with ${{ '180°': 'sp (2 groups)', '120°': 'sp² (3 groups)', '109.5°': 'sp³ (4 groups)', '90°': 'perpendicular orbitals' }[a]}, not this pair.`;
   const make = (ask, ans, reasons, sol) => choicePart(ask, ST_ANG.map(a => opt(a, a === ans, why(ans, a, reasons), a === ans ? '' : 'orbital-angle')), { keep: true, hint: 'Picture the orbitals in the drawing: which axes do they point along?', solution: sol });
-  if (hasTriple) return make('What angle is there between the two π bonds of the triple bond?', '90°', { ok: 'One π bond uses the p_y orbitals and the other uses p_z, and y ⟂ z.', '180°': '180° is the angle between the two sp hybrids along the bond axis. The π bonds use p_y and p_z.', '120°': '120° is for sp² hybrids. The two π bonds come from p_y and p_z, which are perpendicular.', '109.5°': '109.5° is for sp³ hybrids. The leftover p_y and p_z orbitals are at right angles.' }, 'The two π bonds come from p_y–p_y and p_z–p_z overlap; y and z are perpendicular, so the π bonds are at 90°.');
-  if (hyb === 'sp2') return make('What angle does the unhybridized p_y orbital make with the plane of the sp² hybrids?', '90°', { ok: 'The leftover p orbital stands straight up out of the sp² plane, which is why the π bond forms above and below it.', '120°': '120° is the angle between the sp² hybrids themselves, inside the plane.', '180°': 'The p orbital isn’t in the plane at all; it stands perpendicular to it.', '109.5°': '109.5° is for sp³. The p_y orbital is perpendicular to the sp² plane.' }, 'p_y is perpendicular (90°) to the plane of the three sp² hybrids.');
+  if (hasTriple) return make('What angle is there between the two π bonds of the triple bond?', '90°', { ok: 'One π bond uses the p<sub>y</sub> orbitals and the other uses p<sub>z</sub>, and y ⟂ z.', '180°': '180° is the angle between the two sp hybrids along the bond axis. The π bonds use p<sub>y</sub> and p<sub>z</sub>.', '120°': '120° is for sp² hybrids. The two π bonds come from p<sub>y</sub> and p<sub>z</sub>, which are perpendicular.', '109.5°': '109.5° is for sp³ hybrids. The leftover p<sub>y</sub> and p<sub>z</sub> orbitals are at right angles.' }, 'The two π bonds come from p<sub>y</sub>–p<sub>y</sub> and p<sub>z</sub>–p<sub>z</sub> overlap; y and z are perpendicular, so the π bonds are at 90°.');
+  if (hyb === 'sp2') return make('What angle does the unhybridized p<sub>y</sub> orbital make with the plane of the sp² hybrids?', '90°', { ok: 'The leftover p orbital stands straight up out of the sp² plane, which is why the π bond forms above and below it.', '120°': '120° is the angle between the sp² hybrids themselves, inside the plane.', '180°': 'The p orbital isn’t in the plane at all; it stands perpendicular to it.', '109.5°': '109.5° is for sp³. The p<sub>y</sub> orbital is perpendicular to the sp² plane.' }, 'p<sub>y</sub> is perpendicular (90°) to the plane of the three sp² hybrids.');
   if (hyb === 'sp') return make('What angle do the two sp hybrid orbitals make with each other?', '180°', { ok: 'Two hybrids point in opposite directions: linear, 180°.', '90°': '90° is between the leftover p orbitals, not the sp hybrids.' }, 'sp hybrids: 180° (linear).');
   if (hyb === 'sp3') return make('What is the ideal angle between sp³ hybrid orbitals?', '109.5°', { ok: 'Four hybrids spread to the corners of a tetrahedron: 109.5°.' + (M.lp ? ' (Lone pairs squeeze the real H–X–H angle a bit below that.)' : ''), '90°': '90° would be pure p orbitals. Hybridizing spreads the four orbitals to 109.5°.' }, 'sp³ hybrids: 109.5° (tetrahedral).');
   return null;
@@ -2040,7 +2045,7 @@ function genStudio() {
   M.atoms.forEach(([el], i) => { first[i] = el === 'H' ? ['s'] : M.sets[i][0]; });
   const nb = ovs.filter(o => o.kind === 'σ').length, np = ovs.length - nb;
   const p1 = { kind: 'orbbuild', ask: 'Build the bonding orbitals. Drag an orbital card onto an atom (or tap the atom, then tap a card).', M,
-    answer: studioSvg(M, { sets: first }), hint: 'H: 1s. Diatomic halogens: the half-filled p along the internuclear axis (pₓ). Central atoms: hybrids for their electron groups, plus leftover p orbitals for any π bonds.',
+    answer: studioSvg(M, { sets: first }), hint: 'H: 1s. Diatomic halogens: the half-filled p along the internuclear axis (p<sub>x</sub>). Central atoms: hybrids for their electron groups, plus leftover p orbitals for any π bonds.',
     solution: M.atoms.map(([el], i) => el === 'H' ? null : `${el} (atom ${i + 1}): ${M.sets[i].map(s => s.map(x => ORB_TXT[x]).join(' + ')).join(' or ')}`).filter(Boolean).join(' · ') || 'Each H uses its 1s orbital.' };
   const p2 = { kind: 'ovlabel', ask: 'The overlaps are glowing. Mark each numbered overlap σ or π.', M, ovs, answer: ovs.map((o, k) => `${k + 1}: ${o.kind}`).join(' · '), hint: 'Overlap on the internuclear axis (head-on) = σ. Overlap above and below the axis (side by side p) = π.', solution: `${nb} σ${np ? ` and ${np} π` : ''}: every bond has one σ on its axis; each extra bond in a double or triple bond is a π from side-by-side p orbitals.` };
   const p3 = stAnglePart(M);
@@ -2099,7 +2104,12 @@ const TILES = [
   { id: 't4', title: 'MO Builder', blurb: 'Fill MO diagrams, bond order, magnetism.', sec: '§8.4', topics: ['lcao', 'ordering', 'moorder', 'builder', 'read', 'paralist', 'trends', 'ranker', 'ionize', 'moconcept', 'theory', 'o2magnet'],
     ideas: ['In phase → bonding MO. Out of phase → antibonding MO* (node between the nuclei).', 'Li₂–N₂: π2p below σ2p. O₂–Ne₂: σ2p below π2p. Count valence electrons and adjust for charge.', 'BO = ½ (bonding − antibonding). Higher BO → shorter, stronger bond. Any unpaired electron → paramagnetic.'] }
 ];
-const SC_GEN = { scHyb: genSCHyb, scAtom: genSCAtom, scBO: genSCBO, count: genCount, skelcount: genSkelCount };
+/* v17 Skill Check: typed versions of the end-atom, hybrid-count and MO electron-count questions */
+function genSCMOe() {
+  const [a, q] = drawBag('scMOe', MO_SPECIES), an = moAnalyze(a, q), one = an.type === '1s';
+  return { topic: 'builder', tag: F(an.f) + ' (typed)', stem: '', parts: [numPart(`How many ${one ? '' : 'valence '}electrons go into the molecular orbitals of ${F(an.f)}?`, [{ key: 'n', label: 'Electrons', answer: an.n, diag: countDiag(an) }], { hint: `${an.atom} has ${an.v} ${one ? '' : 'valence '}electron${an.v > 1 ? 's' : ''}. Two atoms, then adjust for the charge.`, solution: `2 × ${an.v}${an.q ? (an.q > 0 ? ` − ${an.q}` : ` + ${-an.q}`) : ''} = ${an.n} electrons.` })] };
+}
+const SC_GEN = { scHyb: genSCHyb, scAtom: genSCAtom, scBO: genSCBO, scTerm: () => Object.assign(genTermHyb(true), { topic: 'termhyb' }), scWhy: () => genWhy(true), scMOe: genSCMOe, count: genCount, skelcount: genSkelCount };
 const generate = t => { const q = (TOPICS[t] ? TOPICS[t].gen : SC_GEN[t])(); q.topic = q.topic || t; return q; };
 /* Daily 5 tiers: 2 easy → 2 medium → 1 hard */
 const TIER = { easy: ['whatbond', 'gallery', 'which', 'why', 'table', 'reverse', 'pisource', 'rotation', 'lcao', 'ordering', 'theory', 'moconcept'], medium: ['pecurve', 'strength', 'groups', 'angle', 'howmany', 'atomshape', 'paralist', 'moorder', 'boxes', 'bondtype', 'mixer', 'count', 'skelcount', 'label', 'termhyb', 'bonddesc', 'resonance', 'read', 'trends', 'ranker'], hard: ['studio', 'tagger', 'labeler', 'builder', 'ionize', 'boss', 'o2magnet'] };
@@ -2152,8 +2162,9 @@ const ROUND = {
   faceoff: { title: 'Theory Face-Off', strict: true, again: 'Face-Off again' }
 };
 const FACEOFF_PLAN = ['o2magnet', 'theory', 'theory', 'ranker', 'theory', 'ionize'];
-const SKILL_PLAN = ['count', 'skelcount', 'howmany', 'reverse', 'scBO', 'scBO', 'scHyb', 'scHyb', 'scAtom', 'scAtom'];
-const SC_LABEL = { scHyb: 'Typed: hybridization', scAtom: 'Typed: atom hybridization', scBO: 'Typed: bond order' };
+/* v17: one of each of the ten typed question kinds per round (it used to repeat bond order and hybridization twice each) */
+const SKILL_PLAN = ['count', 'skelcount', 'howmany', 'reverse', 'scBO', 'scHyb', 'scAtom', 'scTerm', 'scWhy', 'scMOe'];
+const SC_LABEL = { scHyb: 'Typed: hybridization', scAtom: 'Typed: atom hybridization', scBO: 'Typed: bond order', scTerm: 'Typed: end-atom hybridization', scWhy: 'Typed: hybrids made', scMOe: 'Typed: MO electron count' };
 const topicLabel = t => TOPICS[t] ? TOPICS[t].label : SC_LABEL[t] || t;
 const STREAK_KEY = 'itsdrdan-daily-streak', dayKey = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 const today = () => dayKey(new Date()), yesterday = () => { const d = new Date(); d.setDate(d.getDate() - 1); return dayKey(d); };
@@ -2305,7 +2316,7 @@ function initWork(p) {
 function newQuestion(focus) {
   state.scratch = null;
   const q = makeQuestion();
-  Object.assign(state, { q, pi: 0, wrong: false, revealed: false, helped: false, done: false, logged: false, aoDone: null, missed: [], tries: 0 });
+  Object.assign(state, { q, pi: 0, wrong: false, revealed: false, helped: false, done: false, logged: false, aoDone: null, missed: [], tries: 0, stepRes: [] });
   state.work = initWork(q.parts[0]);
   $('emptyBox').hidden = true; $('learnBox').hidden = true; $('reportBox').hidden = true; $('playArea').hidden = false; $('skipBtn').hidden = false;
   const T = TOPICS[q.topic], tile = TILES.find(t => t.id === T.tile);
@@ -2313,8 +2324,8 @@ function newQuestion(focus) {
   $('playArea').setAttribute('style', tileVars(tile.id)); $('tileTag').textContent = tile.title + ' · ' + tile.sec; $('topicTag').innerHTML = T.label + (q.tag && q.tag !== T.label ? ' · ' + q.tag : '');
   $('quizTag').hidden = !state.ch; $('quizBar').hidden = !state.ch;
   if (state.ch) { $('quizTag').textContent = `Question ${state.ch.i + 1} of ${state.ch.plan.length}`; $('quizBar').firstElementChild.style.width = (state.ch.i / state.ch.plan.length * 100) + '%'; }
-  $('stem').innerHTML = q.stem || '';
-  $('tip').innerHTML = q.tip && !strict() ? `<div class="tipbox">${ico('bulb')}<span><b>Professor Tip:</b> ${q.tip}</span></div>` : '';
+  $('stem').innerHTML = nfmt(q.stem || '');
+  $('tip').innerHTML = q.tip && !strict() ? nfmt(`<div class="tipbox">${ico('bulb')}<span><b>Professor Tip:</b> ${q.tip}</span></div>`) : '';
   $('hintBtn').hidden = strict(); $('solBtn').hidden = strict(); $('actions').style.gridTemplateColumns = strict() ? '1fr' : '';
   $('hintBox').hidden = true; $('nextBtn').hidden = true; $('solBtn').classList.remove('pulse');
   setFeedback('', '');
@@ -2333,7 +2344,11 @@ function doneHTML(p, i, n) {
   if (p.kind === 'choice' && p.figure) ans = p.figure.replace(/ role="button" tabindex="0"/g, '') + ans;
   if (p.kind === 'rank') ans = p.answer;
   if (p.kind === 'tapcurve') ans = `<div class="figure">${peSvg({ tap: true, r: 74 }).replace(/<rect data-pe[^>]*>/, '')}</div>${p.answer}`;
-  return `<div class="part done"><div class="pnum">${ico('check')} Step ${i + 1} of ${n}</div><div class="ask">${p.ask}</div><div class="pans">${ans}</div>${p.solution && p.kind !== 'boxes' ? `<div class="psol">${p.solution}</div>` : p.kind === 'boxes' ? `<div class="psol">${p.solution}</div>` : ''}</div>`;
+  /* v17: a missed step (strict rounds) shows the student's answer struck through and the reason, in coral, not a green ✓; a revealed step shows as "Answer shown" */
+  const sr = (state.stepRes || [])[i] || {}, cls = sr.miss ? ' missed' : sr.shown ? ' shown' : '';
+  const head = sr.miss ? `${ico('x')} Step ${i + 1} of ${n}: missed` : sr.shown ? `${ico('eye')} Step ${i + 1} of ${n}: answer shown` : `${ico('check')} Step ${i + 1} of ${n}`;
+  const given = sr.miss ? `${sr.given ? `<div class="pgiven">Your answer: ${sr.given}</div>` : ''}${sr.why ? `<div class="pwhy">${sr.why}</div>` : ''}<div class="pnum" style="color:var(--mint-ink)">Correct answer</div>` : '';
+  return `<div class="part done${cls}"><div class="pnum">${head}</div><div class="ask">${p.ask}</div>${given}<div class="pans"${sr.miss ? ' style="color:var(--mint-ink)"' : ''}>${ans}</div>${p.solution && p.kind !== 'boxes' ? `<div class="psol">${p.solution}</div>` : p.kind === 'boxes' ? `<div class="psol">${p.solution}</div>` : ''}</div>`;
 }
 function partBody(p) {
   const w = state.work;
@@ -2396,12 +2411,12 @@ function renderParts() {
   const q = state.q, n = q.parts.length; let h = '';
   for (let i = 0; i < Math.min(state.pi, n); i++) h += doneHTML(q.parts[i], i, n);
   if (state.pi < n) { const p = q.parts[state.pi]; h += `<div class="part current"><div class="pnum">Step ${state.pi + 1} of ${n}</div><div class="ask">${p.ask}</div>${partBody(p)}</div>`; }
-  $('parts').innerHTML = h; paintIcons($('parts'));
+  $('parts').innerHTML = nfmt(h); paintIcons($('parts'));
 }
 function rerenderCurrent(keepFocusSel) {
   const cur = document.querySelector('#parts .part.current'); if (!cur) return;
   const p = state.q.parts[state.pi];
-  cur.innerHTML = `<div class="pnum">Step ${state.pi + 1} of ${state.q.parts.length}</div><div class="ask">${p.ask}</div>${partBody(p)}`;
+  cur.innerHTML = nfmt(`<div class="pnum">Step ${state.pi + 1} of ${state.q.parts.length}</div><div class="ask">${p.ask}</div>${partBody(p)}`);
   if (keepFocusSel) { const el = cur.querySelector(keepFocusSel); if (el) try { el.focus({ preventScroll: true }); } catch (e) {} }
 }
 
@@ -2470,10 +2485,19 @@ function wrong(slip, why) {
   const p = state.q.parts[state.pi];
   if (!state.wrong) { state.wrong = true; ddLog(false, slip); if (P.streak) { P.streak = 0; save(); renderStats(); } }
   setMood('oops', 2200);
-  if (strict()) { state.missed.push(state.pi + 1); setFeedback('bad', `<b>Not quite.</b> ${why || ''}<div class="sol">Answer: <b>${answerText(p)}</b>. ${p.solution || ''}</div>`); advancePart(true); return; }
+  if (strict()) { state.missed.push(state.pi + 1); state.stepRes[state.pi] = { miss: true, given: givenText(p), why: why || '' }; setFeedback('bad', `<b>Not quite.</b> ${why || ''}<div class="sol">Answer: <b>${answerText(p)}</b>. ${p.solution || ''}</div>`); advancePart(true); return; }
   state.tries = (state.tries || 0) + 1;
   setFeedback('bad', `<b>Not quite.</b> ${why || 'Check that step and try again.'}${state.tries >= 2 ? '<br>Stuck? Try <b>Hint</b> or <b>Show step</b>.' : ''}`);
   if (state.tries >= 2) $('solBtn').classList.add('pulse');
+}
+/* what the student entered for this step (typed and choice steps only), for the missed-step box */
+function givenText(p) {
+  try {
+    if (p.kind === 'nums') return p.fields.map(f => { const el = $('in-' + f.key), v = el ? el.value.trim() : '', ok = v && Math.abs(parseNum(v) - f.answer) < 1e-6; return `${f.label}: ${!v ? '—' : ok ? esc(v) + ' ✓' : '<s>' + esc(v) + '</s>'}`; }).join(' · ');
+    if (p.kind === 'text') { const el = $('in-t'); return el ? '<s>' + esc(el.value.trim()) + '</s>' : ''; }
+    if (p.kind === 'choice') { const b = document.querySelector('#parts .part.current .choice.wrong'); return b ? '<s>' + b.innerHTML + '</s>' : ''; }
+  } catch (e) {}
+  return '';
 }
 const answerText = p => p.kind === 'mo' ? 'see the filled diagram' : p.kind === 'boxes' ? fillTxt(p.box.hy) + (p.box.p.length ? ' | p ' + fillTxt(p.box.p) : '') : p.answer;
 function right(why) {
@@ -2509,16 +2533,33 @@ function finishQuestion() {
   if (!coarse()) try { $('nextBtn').focus({ preventScroll: true }); } catch (e) {}
   save(); renderStats(); checkAch(); renderChooser();
 }
-function setFeedback(kind, html) { const f = $('feedback'); f.className = 'feedback' + (kind ? ' ' + kind : ''); f.innerHTML = html; }
+/* v17 notation pass for any HTML put on the page: MO labels get subscripts (σ2p → σ<sub>2p</sub>, π*2p → π*<sub>2p</sub>),
+   p_x/p_y/p_z get subscripts, and a plain-text sp2/sp3/sp3d2 gets superscripts. Only text between tags is changed; text inside
+   <svg>, <sub>, <sup>, <option>, <select>, <script>, <style> and all attributes are left alone. */
+const NF_SKIP = /^(svg|sub|sup|option|select|script|style|textarea|title)$/i;
+function nfmt(html) {
+  if (html == null) return html;
+  const parts = String(html).split(/(<\/?[a-zA-Z!][^>]*>)/); let skip = [];   // a bare "<" in text (σ2s < σ*2s) is not a tag
+  for (let i = 0; i < parts.length; i++) {
+    const t = parts[i]; if (!t) continue;
+    if (t[0] === '<') { const m = t.match(/^<(\/?)([a-zA-Z][\w-]*)/); if (m && NF_SKIP.test(m[2]) && !/\/>$/.test(t)) { if (m[1]) { const k = skip.lastIndexOf(m[2].toLowerCase()); if (k >= 0) skip.splice(k); } else skip.push(m[2].toLowerCase()); } continue; }
+    if (skip.length) continue;
+    parts[i] = t.replace(/([σπ]\*?)([12][sp])(?![a-z0-9])/g, '$1<sub>$2</sub>').replace(/\bp_([xyz])\b|pₓ/g, (m, a) => `p<sub>${a || 'x'}</sub>`)
+      .replace(/\bsp([23])(?:d([23])?)?\b/g, (m, a, b) => 'sp<sup>' + a + '</sup>' + (/d/.test(m) ? 'd' + (b ? '<sup>' + b + '</sup>' : '') : ''));
+  }
+  return parts.join('');
+}
+function setFeedback(kind, html) { const f = $('feedback'); f.className = 'feedback' + (kind ? ' ' + kind : ''); f.innerHTML = nfmt(html); }
 function showStep() {
   const p = state.q && state.q.parts[state.pi]; if (!p || state.done) return;
   if (!state.revealed && !state.wrong) { state.wrong = true; ddLog(false, 'gave-up'); }
   state.revealed = true; state.helped = true; if (P.streak) { P.streak = 0; save(); renderStats(); }
+  state.stepRes[state.pi] = { shown: true };
   if (state.ch && !state.missed.includes(state.pi + 1)) state.missed.push(state.pi + 1);
   setFeedback('info', `<b>Answer:</b> ${answerText(p)}. ${p.kind === 'mo' ? '' : p.solution || ''}`);
   advancePart(true);
 }
-function showHint() { const p = state.q && state.q.parts[state.pi]; if (!p) return; state.helped = true; setMood('thinking'); const h = $('hintBox'); h.hidden = false; h.innerHTML = `<b>Hint:</b> ${p.hint || 'Go back to the Professor Tip above.'}`; }
+function showHint() { const p = state.q && state.q.parts[state.pi]; if (!p) return; state.helped = true; setMood('thinking'); const h = $('hintBox'); h.hidden = false; h.innerHTML = nfmt(`<b>Hint:</b> ${p.hint || 'Go back to the Professor Tip above.'}`); }
 function next() {
   if (state.ch) { state.ch.i++; if (state.ch.i >= state.ch.plan.length) { showReport(); scrollToPlay(); return; } }
   newQuestion(true); scrollToPlay();
@@ -2628,6 +2669,7 @@ function renderLearn(tiles, tile, topics) {
    ${steps}
    ${L.shown < n ? `<div class="part current"><div class="pnum">Step ${L.shown + 1} of ${n}</div><div class="ask">${q.parts[L.shown].ask}</div></div>` : ''}
    <div class="ex-actions">${L.shown < n ? `<button type="button" class="btn primary" data-learnnext>Show step ${L.shown + 1} ${ico('arrow')}</button>` : ''}<button type="button" class="btn" data-learnnew>Another example</button><button type="button" class="btn${L.shown >= n ? ' primary' : ''}" data-learntry>Try one yourself ${ico('pencil')}</button></div>`;
+  box.innerHTML = nfmt(box.innerHTML);
   paintIcons(box);
 }
 
@@ -2648,9 +2690,10 @@ function showReport() {
    ${z.results.some(r => r.steps > 1) ? '<p class="typing-note" style="margin:0 0 6px">A question counts only when every step is right.</p>' : ''}<ul class="report-list">${z.results.map((r, i) => `<li class="${r.ok ? 'ok' : ''}">${r.ok ? '✓' : '✗'} ${i + 1}. ${topicLabel(r.topic)}${r.tag ? ' · ' + r.tag : ''}${!r.ok && r.steps > 1 && r.missed && r.missed.length ? ` <small>(${r.steps - r.missed.length} of ${r.steps} steps right; missed step ${r.missed.join(', ')})</small>` : ''}</li>`).join('')}</ul>
    ${missed.length ? `<p><b>Study plan:</b> practice these next.</p><div class="ex-actions"><button type="button" class="btn primary" id="practiceMissed">Practice my missed topics ${ico('arrow')}</button></div>` : '<p>No misses. Try another round!</p>'}
    <div class="ex-actions"><button type="button" class="btn" id="chAgain">${R.again}</button></div>`;
+  box.innerHTML = nfmt(box.innerHTML);
   const kind = z.kind; state.ch = null; renderChooser();
   $('chAgain').onclick = () => { if (kind === 'daily') { state.mode = 'practice'; renderChooser(); refresh(); } else startRound(kind); };
-  if ($('practiceMissed')) $('practiceMissed').onclick = () => { state.sel = new Set(missed.map(t => TOPICS[t] ? t : ({ scHyb: 'groups', scAtom: 'tagger', scBO: 'read' })[t])); state.mode = 'practice'; save(); renderChooser(); newQuestion(true); scrollToPlay(); };
+  if ($('practiceMissed')) $('practiceMissed').onclick = () => { state.sel = new Set(missed.map(t => TOPICS[t] ? t : ({ scHyb: 'groups', scAtom: 'tagger', scBO: 'read', scTerm: 'termhyb', scWhy: 'why', scMOe: 'builder' })[t])); state.mode = 'practice'; save(); renderChooser(); newQuestion(true); scrollToPlay(); };
   setMood(frac >= 0.8 ? 'victory' : frac >= 0.6 ? 'correct' : 'thinking'); if (frac >= 0.8) confetti();
 }
 
@@ -2690,10 +2733,20 @@ function renderSheet() {
    <div class="rule"><h3>Valence bond theory (8.1)</h3><p>Bond = overlap of two half-filled orbitals. Bond length at the energy minimum; bond energy = well depth (H₂: 74 pm, 436 kJ/mol).</p></div>
    <div class="rule"><h3>MO ordering (8.4)</h3><p><b>Li₂–N₂:</b> σ2s, σ*2s, π2p, σ2p, π*2p, σ*2p</p><p><b>O₂–Ne₂:</b> σ2s, σ*2s, σ2p, π2p, π*2p, σ*2p</p></div>
    <div class="rule wide"><h3>Reading an MO diagram</h3><p>Count valence electrons of both atoms; add for a negative charge, subtract for a positive one. Fill bottom up (Aufbau), one per box first in π pairs (Hund), max 2 per box (Pauli).</p><p><b>Bond order = ½ (bonding − antibonding)</b>. Higher BO → shorter, stronger bond. BO = 0 → not expected to exist (He₂, Be₂, Ne₂). Any unpaired electron → <b>paramagnetic</b>; all paired → diamagnetic. HOMO = highest occupied MO (electrons leave from here).</p></div></div>`;
+  $('sheetBody').innerHTML = nfmt($('sheetBody').innerHTML);
 }
 
 /* ---------- wiring ---------- */
+/* v17: typed hybridization answers turn digits after p or d into superscripts as the student types (sp3 → sp³, sp^2 → sp², sp3d2 → sp³d²) */
+const SUPD = { 0: '⁰', 1: '¹', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶', 7: '⁷', 8: '⁸', 9: '⁹' };
+const supHybText = t => String(t).replace(/([pd])\s*\^?\s*(\d+)/gi, (m, a, d) => a + [...d].map(c => SUPD[c]).join(''));
+function supHybInput(el) {
+  const v = el.value, nv = supHybText(v); if (nv === v) return;
+  const c = el.selectionStart == null ? v.length : el.selectionStart, nc = supHybText(v.slice(0, c)).length;
+  el.value = nv; try { el.setSelectionRange(nc, nc); } catch (e) {}
+}
 function bind() {
+  document.addEventListener('input', e => { const t = e.target; if (t && t.id === 'in-t' && !e.isComposing && state.q && state.q.parts[state.pi] && state.q.parts[state.pi].hyb) supHybInput(t); });
   $('course').addEventListener('click', e => { const b = e.target.closest('button[data-course]'); if (b && b.dataset.course !== state.course) setCourse(b.dataset.course); });
   $('modes').addEventListener('click', e => { const b = e.target.closest('button[data-mode]'); if (b) setMode(b.dataset.mode); });
   $('specials').addEventListener('click', e => { const b = e.target.closest('[data-round]'); if (b) startRound(b.dataset.round); });
