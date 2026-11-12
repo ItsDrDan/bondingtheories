@@ -1259,7 +1259,7 @@ function genTrends() {
   const ask = pick(['shortest', 'longest', 'strongest', 'weakest']), wantHigh = ask === 'shortest' || ask === 'strongest';
   const sorted = [...set].sort((x, y) => x.bo - y.bo), best = wantHigh ? sorted[2] : sorted[0], worst = wantHigh ? sorted[0] : sorted[2];
   const opts = set.map(s => s === best ? opt(F(s.f), true, `${F(s.f)} has the ${wantHigh ? 'highest' : 'lowest'} bond order (${fmtBO(s.bo)}), so its bond is the ${ask}.`) : opt(F(s.f), false, s === worst ? SLIP['bo-length-backwards'] + ` ${F(s.f)} has BO ${fmtBO(s.bo)}, the ${wantHigh ? 'lowest' : 'highest'}.` : `${F(s.f)} has BO ${fmtBO(s.bo)}. Compare all three bond orders.`, s === worst ? 'bo-length-backwards' : 'bo-compare'));
-  return { topic: 'trends', tag: 'bond order', stem: refDiagram(el), tip: 'Higher bond order → shorter, stronger bond (compare species of the same element).', parts: [choicePart(`Which has the <b>${ask}</b> bond?<br><span style="font-weight:600;font-size:.95rem">${set.map(s => F(s.f)).join(', ')}</span>`, opts, { hint: 'Find each bond order (build the MO filling in your head or on paper).', solution: sorted.map(s => `${F(s.f)}: BO ${fmtBO(s.bo)}`).join(' · ') + `. ${ask[0].toUpperCase() + ask.slice(1)}: ${F(best.f)}.` })] };
+  return { topic: 'trends', tag: 'bond order', stem: refDiagram(el), tip: 'Higher bond order → shorter, stronger bond (compare species of the same element).', parts: [choicePart(`Which has the <b>${ask}</b> bond?<br><span style="font-weight:600;font-size:.95rem">${set.map(s => F(s.f)).join(', ')}</span>`, opts, { hint: 'Start from the neutral diagram above: add or remove electrons for each ion, then find each bond order.', solution: sorted.map(s => `${F(s.f)}: BO ${fmtBO(s.bo)}`).join(' · ') + `. ${ask[0].toUpperCase() + ask.slice(1)}: ${F(best.f)}.` })] };
 }
 const IONIZE = [['H', 0, -1], ['C', 0, -1], ['N', 0, -1], ['O', 0, -1], ['F', 0, -1], ['B', 0, -1], ['N', 0, 1], ['O', 0, 1], ['C', 0, 1]];
 function genIonize() {
@@ -1298,7 +1298,7 @@ function moSvg(an, o = {}) {
   });
   const mo = o.mo || an.levels.map(l => Array(l.d).fill(0)); let serial = 0;
   an.levels.forEach((l, i) => {
-    mo[i].forEach((v, j) => { const cols = []; for (let e = 0; e < v; e++) { cols.push(serial >= 2 * an.v ? '#7960ae' : serial % 2 === 0 ? '#346cc3' : '#bf5266'); serial++; } const tap = o.edit === 'mo' ? `mo:${i}:${j}` : ''; s += `<g class="${o.homo === i ? 'homo' : ''}">` + box(bx(xs.M, l.d, j), ys[i], v, '', cols.length === 2 ? cols : [cols[0] || '#1f2a44', '#1f2a44'], tap, `${l.lab} orbital${l.d > 1 ? ' ' + (j + 1) : ''}`) + '</g>'; });
+    mo[i].forEach((v, j) => { const cols = []; for (let e = 0; e < v; e++) { cols.push(serial >= 2 * an.v ? '#7960ae' : serial % 2 === 0 ? '#346cc3' : '#bf5266'); serial++; } const tap = o.edit === 'mo' || o.edit === 'scratch' ? `${o.edit}:${i}:${j}` : ''; s += `<g class="${o.homo === i ? 'homo' : ''}">` + box(bx(xs.M, l.d, j), ys[i], v, '', cols.length === 2 ? cols : [cols[0] || '#1f2a44', '#1f2a44'], tap, `${l.lab} orbital${l.d > 1 ? ' ' + (j + 1) : ''}`) + '</g>'; });
     s += txt(xs.M, ys[i] + 33, l.lab, '#48576d', 14);
   });
   s += txt(xs.M, 34, F(an.f).replace(/<sub>(\d+)<\/sub>/g, '<tspan baseline-shift="sub" font-size="12">$1</tspan>').replace(/<sup>([^<]+)<\/sup>/g, '<tspan baseline-shift="super" font-size="12">$1</tspan>') + ' MOs', '#1f2a44', 17);
@@ -1630,9 +1630,14 @@ function genSCAtom() {
   const slipFor = n => { const d = tagSlip(A, n); return { slip: d[0], why: d[1] }; };
   return { topic: 'tagger', tag: F(M.f) + ' (typed)', stem: `<p class="lead">${molTitle(M)}</p><div class="figure">${molSvg(S, { nums: { [t]: 1 }, label: 'Structure with one numbered atom' })}</div>`, parts: [hybText(`Type the hybridization of atom 1 (${A.el}).`, A.hyb, slipFor, `${A.nb.length} bonded + ${A.lp} lone pair${A.lp === 1 ? '' : 's'} = ${A.groups} groups → ${hybH(A.hyb)}.`)] };
 }
+/* an empty MO diagram students can fill as a scratch pad (not graded) */
+function scratchMO(an, vals) {
+  const af = aoFill(an.atom), mo = vals || an.levels.map(l => Array(l.d).fill(0)), n = mo.flat().reduce((a, b) => a + b, 0);
+  return `<div id="scratchMO"><div class="mo-scroll">${moSvg(an, { edit: 'scratch', mo, ao: [af, af] })}</div><div class="checkrow" style="justify-content:space-between"><span class="counter" style="margin:0">Electrons placed: ${n}</span><button type="button" class="btn" data-scratchclear>Clear diagram</button></div></div>`;
+}
 function genSCBO() {
   const [a, q] = drawBag('scBO', MO_SPECIES), an = moAnalyze(a, q);
-  return { topic: 'read', tag: F(an.f) + ' (typed)', stem: `<p class="lead">Use MO theory for <b>${F(an.f)}</b>. Sketch the diagram on paper.</p>`, parts: [numPart(`Find the bond order and the number of unpaired electrons in ${F(an.f)}.`, [{ key: 'bo', label: 'Bond order', answer: an.bo, show: fmtBO(an.bo), diag: boDiag(an) }, { key: 'u', label: 'Unpaired electrons', answer: an.unp, diag: () => ['unpaired-count', `Fill ${an.n} ${an.type === '1s' ? '' : 'valence '}electrons (${an.type === 'low' ? 'π2p below σ2p' : an.type === 'high' ? 'σ2p below π2p' : 'σ1s then σ*1s'}) and count single arrows.`] }], { hint: `${an.n} ${an.type === '1s' ? '' : 'valence '}electrons. BO = ½ (bonding − antibonding).`, solution: `${configTxt(an)}. BO = ½ (${an.bond} − ${an.anti}) = ${fmtBO(an.bo)}; ${an.unp} unpaired.` })] };
+  return { topic: 'read', tag: F(an.f) + ' (typed)', stem: `<p class="lead">Use MO theory for <b>${F(an.f)}</b>. Tap the MO boxes to fill the diagram (it isn't graded), or work on paper.</p>${scratchMO(an)}`, scratch: an, parts: [numPart(`Find the bond order and the number of unpaired electrons in ${F(an.f)}.`, [{ key: 'bo', label: 'Bond order', answer: an.bo, show: fmtBO(an.bo), diag: boDiag(an) }, { key: 'u', label: 'Unpaired electrons', answer: an.unp, diag: () => ['unpaired-count', `Fill ${an.n} ${an.type === '1s' ? '' : 'valence '}electrons (${an.type === 'low' ? 'π2p below σ2p' : an.type === 'high' ? 'σ2p below π2p' : 'σ1s then σ*1s'}) and count single arrows.`] }], { hint: `${an.n} ${an.type === '1s' ? '' : 'valence '}electrons. BO = ½ (bonding − antibonding).`, solution: `${configTxt(an)}. BO = ½ (${an.bond} − ${an.anti}) = ${fmtBO(an.bo)}; ${an.unp} unpaired.` })] };
 }
 
 /* ================= v6: more question types (modeled on OpenStax Ch 8 exercises and the Tro Ch 11 test bank; original wording) ================= */
@@ -1973,6 +1978,7 @@ function initWork(p) {
   return null;
 }
 function newQuestion(focus) {
+  state.scratch = null;
   const q = makeQuestion();
   Object.assign(state, { q, pi: 0, wrong: false, revealed: false, helped: false, done: false, logged: false, aoDone: null });
   state.work = initWork(q.parts[0]);
@@ -2199,6 +2205,17 @@ function bondSelect(i) {
   const k = p.rows.findIndex(r => r.bond === i); if (k < 0) return; w.cur = k; rerenderCurrent(`[data-lslot="${k}:s"]`);
   const row = document.querySelector(`#parts [data-lrow="${k}"]`); if (row) try { row.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {}
 }
+function scratchRender(focusSel) {
+  const q = state.q, box = document.getElementById('scratchMO'); if (!q || !q.scratch || !box) return;
+  box.outerHTML = scratchMO(q.scratch, state.scratch);
+  if (focusSel) { const el = document.querySelector('#scratchMO ' + focusSel); if (el) try { el.focus({ preventScroll: true }); } catch (e) {} }
+}
+function scratchCycle(spec) {
+  const q = state.q; if (!q || !q.scratch) return;
+  if (!state.scratch) state.scratch = q.scratch.levels.map(l => Array(l.d).fill(0));
+  const [, i, j] = spec.split(':').map(Number); state.scratch[i][j] = (state.scratch[i][j] + 1) % 3;
+  scratchRender(`[data-cyc="${spec}"]`);
+}
 function clearWork() { const p = state.q.parts[state.pi]; state.work = initWork(p); rerenderCurrent(); }
 
 /* ---------- Learn mode ---------- */
@@ -2304,6 +2321,8 @@ function bind() {
     const ch = t.closest('#parts .part.current [data-choice]'); if (ch) return choose(+ch.dataset.choice);
     if (t.closest('#parts [data-check]')) return checkCurrent();
     if (t.closest('#parts [data-clear]')) return clearWork();
+    const sc = t.closest('#stem [data-cyc^="scratch:"]'); if (sc) return scratchCycle(sc.dataset.cyc);
+    if (t.closest('#stem [data-scratchclear]')) { state.scratch = null; return scratchRender(); }
     const cy = t.closest('#parts [data-cyc]'); if (cy) return cycle(cy.dataset.cyc);
     const to = t.closest('#parts [data-tagopt]'); if (to) { const [a, o] = to.dataset.tagopt.split(':'); return tagSet(+a, o); }
     const at = t.closest('#parts [data-atom]'); if (at) return tagSelect(+at.dataset.atom);
@@ -2330,7 +2349,7 @@ function bind() {
     const p = state.q.parts[state.pi], row = sl.closest('.lrow'); delete state.work.marks[p.rows[+k].bond]; row.classList.remove('ok', 'no');
   });
   document.addEventListener('keydown', e => {
-    const g = e.target.closest && e.target.closest('#parts [role="button"]');
+    const g = e.target.closest && e.target.closest('#parts [role="button"], #stem [role="button"]');
     if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); g.dispatchEvent(new MouseEvent('click', { bubbles: true })); return; }
     if (e.key === 'Enter' && e.target.closest && e.target.closest('#parts input')) { e.preventDefault(); checkCurrent(); }
   });
