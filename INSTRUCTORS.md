@@ -4,7 +4,24 @@ Working title **Orbital Overlap**. Repo/hub label: **Bonding Theories**. Suggest
 
 - **Courses:** CHEM 1A (default) and CHEM 1B review. Link with `?course=1A` or `?course=1B`; progress is saved separately per course on the student's device.
 - **Source:** OpenStax *Chemistry 2e* §7.6 (VSEPR) and §8.1–8.4. Numbers in the game: the H₂ energy curve (74 pm, 436 kJ/mol, §8.1), real angles (NH₃ 107.3°, H₂O 104.5°, §8.2; v1 said 107°, corrected in v2 to match OpenStax), and bond lengths/energies from **Table 8.1** (H–Cl, H–Br, H–I, C–C/C=C/C≡C, C–N/C=N/C≡N, C–O/C=O/C≡O), all checked against openstax.org on 2026-11-11. Bond orders, electron counts, unpaired electrons and magnetism are **computed** from the MO filling, never typed in.
-- **Current file:** `bonding-theories-v2.html` (version in the file name only). v1 is kept alongside for comparison.
+- **Current file:** `bonding-theories-v3.html` (version in the file name only). v2 is live in `ItsDrDan/bondingtheories`; v1 and v2 are kept here for comparison.
+- **Links:** `?mode=daily`, `?mode=skill`, `?mode=challenge`, `?mode=faceoff` (Face-Off only once unlocked), `?mode=learn`.
+
+## New in v3
+
+- **Hybrid Mixer** (Tile 2): tap s, p and d cards into a mixer; it shows live what they make ("3 orbitals in → 3 sp² hybrids + 1 unhybridized p"), then students pick the electron-group geometry. Slips: no s / two s, forgot lone pairs, double bond counted twice, d used before all three p. Expanded-octet molecules appear only when the sp³d/sp³d² topic is turned on.
+- **Ranker** (Tile 4): tap 3–4 species of the same element into order by bond order, bond length or bond strength (O₂²⁻/O₂⁻/O₂/O₂⁺ and the N, F, C, B families; bond orders always distinct). A fully reversed order is logged as `bo-length-backwards`.
+- **Theory Face-Off** (boss round): unlocks after 5 right in Hybrid Workshop and 5 in MO Builder. 6 questions: liquid O₂ and the magnet (which theory explains it, how many unpaired electrons, which MO holds them), three "Which theory would you use to…" cards (shape → VSEPR, overlap names → VB, magnetism / ion bond order / delocalized π → MO, He₂ → both), a Ranker item and a HOMO/ionization item. The two new topics also live in Tile 4 for practice.
+- **Skill Check Prep**: 10 typed answers, no multiple choice: σ/π counts (one line drawing), 3 bond order + unpaired electrons (no diagram given), and 4 typed hybridizations (central atom, or a numbered atom in a bigger molecule). "sp2", "sp²" and "sp^2" are all accepted. Results + study plan.
+- **Daily 5**: 2 easy → 2 medium → 1 hard, weighted toward missed and unseen topics, hints allowed. Finishing it updates the **shared day streak** (`itsdrdan-daily-streak`, the same one Bridge to 1B uses) and gives +20 XP once per day.
+- **Orbital boxes & roles** (Tile 2, expanded after Dr. Dan's review): questions now come from the game's molecules: 37 different atoms (every B, Be, C, N, O that is central or in a multiple bond, e.g. C in CH₂O, O in C=O of HCOOH, N in CH₃CN, middle C of allene, B in BF₃). The atom is marked "1" on the drawing. Three steps: pick the hybridization, fill the hybrid and leftover-2p boxes, then **label each orbital's job** (σ bond to H/C/N/O, lone pair, π bond to …, empty). Slips: π from a hybrid, σ or lone pair in a 2p, ↑↓ hybrid not called a lone pair. Atoms with a formal charge are left out so the electron count always works.
+- **σ or π? Label & count** (Tile 2): numbered bonds (same kind share a number, shown ×n); students mark each as 1 σ / 1 σ + 1 π / 1 σ + 2 π, then count all σ and π bonds in the molecule.
+- **MO reference diagram**: Bond order trends (strongest/weakest/shortest/longest) and the Ranker now show the filled MO diagram of the neutral diatomic, with the HOMO outlined, so students add or remove electrons from it instead of guessing.
+- New badges: Theory Face-Off Champion (5+ of 6), Skill Check Ready (8+), Daily Habit (3-day streak), Hybrid Mixer Pro. The old "Hybrid Mixer" badge (10 Tile 2 right) is now "Hybrid Handler".
+
+## Question bank
+
+Prepared in the local `questionbank` clone (not pushed): `tools/samplers/bondingtheories.js`, `bondingtheories` added to the nightly build's game list, and 8 entries in `skills.json`. The sampler keeps single-step questions (multiple choice and numbers; σ/π counts become two number items) and skips the interactive diagrams. In a browser test it produced 232 items with every answer accepted by the game. It uses v3 topics, so **push it together with v3**, not before.
 
 ## New in v2
 
@@ -41,11 +58,10 @@ Organic molecules (ethane, ethene, ethyne, methanol, methylamine, formic acid, a
 
 From the design outline: `double-bond-two-groups`, `forgot-lone-pairs`, `shape-vs-eg`, `pi-from-hybrid`, `hybrid-count`, `hydrogen-hybridized`, `sigma-pi-total`, `missed-CH-bonds`, `charge-sign`, `wrong-ordering`, `bo-not-halved`, `included-core`, `hund-violation`, `para-dia-flip`, `ionize-wrong-mo`, `bo-length-backwards`.
 
-Added in v1 and v2: `ignored-charge` (used the neutral count for an ion), `one-atom` (counted one atom's electrons), `aufbau` (filled a higher MO before a lower one), `flat-drawing` (read the angle off the flat Lewis drawing), `ideal-angle` (109.5° for NH₃/H₂O), `sigma-vs-pi`, `pi-from-s`, `electron-count`, `group-count`, `tag-count`, `p-overfill`, `hybrid-fill`, `sigma-from-p`, `pe-read`, `length-strength`, `pi-strength`, `overlap-direction`, `hyb-all`, `gave-up` (used Show step), plus `concept`-style codes for the static multiple-choice items.
+Added in v1 and v2: `ignored-charge` (used the neutral count for an ion), `one-atom` (counted one atom's electrons), `aufbau` (filled a higher MO before a lower one), `flat-drawing` (read the angle off the flat Lewis drawing), `ideal-angle` (109.5° for NH₃/H₂O), `sigma-vs-pi`, `pi-from-s`, `electron-count`, `group-count`, `tag-count`, `p-overfill`, `hybrid-fill`, `sigma-from-p`, `pe-read`, `length-strength`, `pi-strength`, `overlap-direction`, `hyb-all`, `mixer-no-s`, `mixer-d-early`, `rank-order`, `rank-reversed`, `theory-choice`, `format`, `p-role`, `orbital-role`, `pi-on-single`, `missed-pi`, `count-kinds`, `gave-up` (used Show step), plus `concept`-style codes for the static multiple-choice items.
 
 ## Not in v1 yet (per the build plan)
 
-- **v3:** Hybrid Mixer (drag/tap s + p cards), Ranker, Theory Face-Off boss round (O₂ magnet), Skill Check Prep, Daily 5 + question-bank export.
 - **v4:** art package (logo, mascot moods, tile icons, badges), study hub card, chemistry accuracy pass. v1 uses an inline SVG p-orbital mascot and brand-kit badges as stand-ins, and `meta.json` has no `logo` entry until the art exists.
 - **Heteronuclear / isoelectronic** (CO, CN⁻, NO⁺, NO) is held back until checked against OpenStax §8.4 exercises and the Tro test bank.
 - **Videos** open at the start of each lecture; timestamps are not mapped yet.

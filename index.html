@@ -138,6 +138,23 @@ svg .zone{cursor:pointer;color:#4b57d1}svg .zone:hover,svg .zone:focus{color:#2f
 .lrow select{min-height:44px;border:1.5px solid var(--line2);border-radius:10px;padding:6px 8px;font:inherit;font-weight:700;background:#fff;color:var(--ink);max-width:100%}
 .lrow select:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px #4b57d11f}
 .nudge{min-width:56px}
+.specials{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
+.special{display:flex;align-items:center;gap:12px;text-align:left;border:1px solid #ead9a0;background:linear-gradient(135deg,#fffbf1,#fbf4ff);border-radius:18px;padding:10px 14px;min-height:72px;box-shadow:var(--shadow)}
+.special b{display:block;font-family:var(--font-display);font-weight:600;font-size:1.08rem}.special small{display:block;color:var(--muted);font-size:.84rem;line-height:1.3}
+.special .ms-ico{background:#fff3d6;color:#8a6400}.special.on{border-color:var(--accent);box-shadow:0 0 0 3px #4b57d126,var(--shadow)}
+.special.locked{background:#f4f5f9;border-color:var(--line2);filter:saturate(.3)}.special.locked .ms-ico{background:#e9ebf2;color:var(--faint)}
+.mixer{display:grid;gap:10px}
+.tray{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.mcard{display:flex;flex-direction:column;align-items:center;gap:2px;width:74px;min-height:84px;border:2px solid var(--line2);border-radius:14px;background:#fff;padding:6px 4px;font-weight:800;color:#3d4a73}
+.mcard svg{width:44px;height:44px}.mcard.in{opacity:.35;border-style:dashed}
+.bowl{border:2px dashed #aab2ea;border-radius:18px;background:var(--accent-soft);padding:10px;min-height:96px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center}
+.bowl .mcard{border-color:var(--accent)}.bowl .empty-note{color:var(--muted);font-weight:700}
+.mixout{text-align:center;font-weight:800;font-size:1.05rem;color:#26326a}.mixout .warn{color:var(--rose-ink)}
+.ranklist{display:grid;gap:8px;max-width:420px;margin:6px auto}
+.rankbtn{display:flex;align-items:center;gap:12px;border:1.5px solid var(--line2);background:#fff;border-radius:12px;padding:10px 14px;min-height:54px;font-size:1.15rem;font-weight:800;color:#26326a;text-align:left}
+.rankbtn .pos{width:30px;height:30px;border-radius:50%;border:2px dashed var(--line2);display:grid;place-items:center;font-size:.95rem;color:var(--faint);flex:none}
+.rankbtn.on{border-color:var(--accent);background:var(--accent-soft)}.rankbtn.on .pos{background:var(--accent);border:0;color:#fff}
+@media(max-width:760px){.specials{grid-template-columns:1fr;gap:8px}.special{min-height:60px}}
 .tagrows{display:grid;gap:8px;margin-top:8px}
 .tagrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid var(--line);border-radius:12px;padding:6px 10px;background:#fbfbfe}
 .tagrow.sel{border-color:var(--accent);box-shadow:0 0 0 3px #4b57d11f}
@@ -271,6 +288,7 @@ table.data{border-collapse:collapse;font-size:.95rem;background:#fff;width:100%}
    <button type="button" data-mode="practice"><span class="ms-ico" data-icon="pencil" aria-hidden="true"></span><span><b>Practice</b><small>Your topics, with hints and feedback on every slip.</small></span></button>
    <button type="button" data-mode="challenge"><span class="ms-ico" data-icon="target" aria-hidden="true"></span><span><b>Challenge</b><small>10 mixed questions from all 4 tiles. No hints.</small></span></button>
   </div>
+  <div class="specials" id="specials"></div>
  </section>
 
  <main class="panel" id="play">
@@ -817,12 +835,90 @@ const BOXCASES = [
   { atom: 'O', ex: 'CH2O', where: 'the O in CH₂O', hyb: 'sp2', hy: [2, 2, 1], p: [1] }
 ];
 const BOX_GROUPS = { CH4: '4 bonds, 0 lone pairs', C2H4: '3 σ bonds (one double bond counts once)', C2H2: '2 σ bonds (the triple bond counts once)', NH3: '3 bonds + 1 lone pair', H2O: '2 bonds + 2 lone pairs', BF3: '3 bonds, no lone pairs', BeCl2: '2 bonds, no lone pairs', HCN: '1 triple bond + 1 lone pair', CH2O: '1 double bond + 2 lone pairs' };
+/* v3.1: box questions are built from the game's molecules, one per distinct second-row atom (B, Be, C, N, O).
+   Hybrids hold lone pairs (↑↓) and one electron per σ bond (↑); unhybridized 2p hold one electron per π bond (↑) or stay empty. */
+function annotate(S) {
+  S.atoms.forEach(a => { a.nb = []; a.bs = 0; });
+  S.bonds.forEach(b => { S.atoms[b.a].nb.push(b.b); S.atoms[b.b].nb.push(b.a); S.atoms[b.a].bs += b.o; S.atoms[b.b].bs += b.o; });
+  S.atoms.forEach(a => { if (a.lp == null) a.lp = a.el === 'H' ? 0 : (VAL[a.el] - a.bs) / 2; a.groups = a.nb.length + a.lp; a.hyb = a.el === 'H' ? 'none' : HYB[a.groups]; });
+  return S;
+}
+const ROW2 = ['Be', 'B', 'C', 'N', 'O'];
+let BOX_BANK = null;
+function boxBank() {
+  if (BOX_BANK) return BOX_BANK;
+  const out = [], seen = new Set();
+  const mols = [...MULTI.map(M => ({ f: M.f, name: M.name, S: annotate(multiSpec(M)) })),
+    ...MOLS.filter(m => !m.q && !m.res && !info(m).expanded && !MULTI.some(M => M.f === m.f)).map(m => ({ f: m.f, name: null, S: annotate(scSpec(m)) }))];
+  mols.forEach(({ f, name, S }) => S.atoms.forEach((A, t) => {
+    if (!ROW2.includes(A.el)) return;
+    const nPi = A.bs - A.nb.length;
+    if (A.nb.length < 2 && !nPi) return;                                   // plain terminal atoms are left out
+    if (A.groups > 4 || nPi > LEFT_P[A.hyb]) return;
+    const partners = A.nb.map(j => S.atoms[j].el), piTo = [];
+    A.nb.forEach(j => { const b = S.bonds.find(x => (x.a === t && x.b === j) || (x.b === t && x.a === j)); for (let k = 1; k < b.o; k++) piTo.push(S.atoms[j].el); });
+    const hy = [...Array(A.lp).fill(2), ...Array(A.nb.length).fill(1)], p = [...Array(nPi).fill(1), ...Array(LEFT_P[A.hyb] - nPi).fill(0)];
+    if (hy.concat(p).reduce((x, y) => x + y, 0) !== VAL[A.el]) return;      // formal charge on this atom: skip
+    const key = f + '|' + A.el + '|' + partners.slice().sort().join() + '|' + piTo.join() + '|' + A.lp; if (seen.has(key)) return; seen.add(key);
+    const roles = { hy: [...Array(A.lp).fill('lone pair'), ...partners.map(e => `σ bond to ${e}`)], p: [...piTo.map(e => `π bond to ${e}`), ...Array(LEFT_P[A.hyb] - nPi).fill('empty')] };
+    out.push({ f, name, S, t, atom: A.el, hyb: A.hyb, hy, p, roles, lp: A.lp, nb: A.nb.length, nPi, where: `atom 1 (${A.el}) in ${F(f)}` });
+  }));
+  return (BOX_BANK = out);
+}
 function genBoxes() {
-  const b = drawBag('boxes', BOXCASES), g = b.hy.length, v = VAL[b.atom];
-  const hopts = ['sp', 'sp2', 'sp3'].map(h => { const gg = { sp: 2, sp2: 3, sp3: 4 }[h]; return opt(hybH(h), h === b.hyb, h === b.hyb ? `${BOX_GROUPS[b.ex]} = ${g} groups → ${hybH(h)}.` : (b.ex === 'NH3' || b.ex === 'H2O' || b.ex === 'HCN' || b.ex === 'CH2O') && gg < g ? SLIP['forgot-lone-pairs'] : gg > g && /2|3/.test(b.ex) && b.hyb !== 'sp3' ? SLIP['double-bond-two-groups'] : `${hybH(h)} gives ${gg} hybrids, but ${b.where} has ${g} groups.`, (b.ex === 'NH3' || b.ex === 'H2O' || b.ex === 'HCN' || b.ex === 'CH2O') && gg < g ? 'forgot-lone-pairs' : gg > g ? 'double-bond-two-groups' : 'hybrid-count'); });
-  const p1 = choicePart(`What is the hybridization of ${b.where}?`, hopts, { keep: true, hint: 'Count electron groups: bonded atoms + lone pairs.', solution: `${BOX_GROUPS[b.ex]} → ${g} groups → ${hybH(b.hyb)}.` });
-  const p2 = { kind: 'boxes', ask: `Fill the hybridized orbital boxes for ${b.where}. Tap a box to cycle: empty → ↑ → ↑↓.`, box: b, answer: boxesHTML(b, null, true), hint: `${b.atom} has ${v} valence electrons. Spread them out (Hund’s rule), one per box first. Unhybridized p orbitals hold the π electrons.`, solution: boxSolution(b) };
-  return { topic: 'boxes', tag: b.atom + ' · ' + hybH(b.hyb), stem: `<p class="lead">${b.where}: <b>${b.atom}</b> has ${v} valence electrons (2s<sup>2</sup>2p<sup>${v - 2}</sup>).</p>`, tip: 'n orbitals in = n hybrids out. Hybrids hold σ bonds and lone pairs; leftover p orbitals hold π electrons.', parts: [p1, p2] };
+  const b = drawBag('boxes2', boxBank()), g = b.hy.length, v = VAL[b.atom], A = b.S.atoms[b.t];
+  const groupsTxt = `${b.nb} bonded atom${b.nb > 1 ? 's' : ''} + ${b.lp} lone pair${b.lp === 1 ? '' : 's'} = ${g} groups`;
+  const hopts = ['sp', 'sp2', 'sp3'].map(h => { const gg = { sp: 2, sp2: 3, sp3: 4 }[h]; if (h === b.hyb) return opt(hybH(h), true, `${groupsTxt} → ${hybH(h)}.`); const d = tagSlip(A, h); return opt(hybH(h), false, d[1], d[0]); });
+  const p1 = choicePart(`What is the hybridization of atom 1 (${b.atom})?`, hopts, { keep: true, hint: 'Count electron groups: bonded atoms + lone pairs. A double or triple bond is one group.', solution: `${groupsTxt} → ${hybH(b.hyb)}.` });
+  const p2 = { kind: 'boxes', ask: `Fill the hybridized orbital boxes for atom 1 (${b.atom}). Tap a box to cycle: empty → ↑ → ↑↓.`, box: b, answer: boxesHTML(b, null, true), hint: `${b.atom} has ${v} valence electrons. Lone pairs go in hybrids as ↑↓; each σ bond needs one ↑ in a hybrid; each π bond needs one ↑ in a leftover p.`, solution: boxSolution(b) };
+  const p3 = rolesPart(b);
+  const label = b.name ? b.name[0].toUpperCase() + b.name.slice(1) + ', ' + F(b.f) : F(b.f);
+  return { topic: 'boxes', tag: `${F(b.f)} · ${b.atom} ${hybH(b.hyb)}`, stem: `<p class="lead">${label}</p><div class="figure">${molSvg(b.S, { nums: { [b.t]: 1 }, label: 'Structure with atom 1 marked' })}</div><p class="note">Atom 1 is <b>${b.atom}</b>: ${v} valence electrons (2s<sup>2</sup>2p<sup>${v - 2}</sup>).</p>`, tip: 'n orbitals in = n hybrids out. Hybrids hold σ bonds and lone pairs; leftover p orbitals hold π electrons.', parts: [p1, p2, p3] };
+}
+/* label each orbital: what does it do in this molecule? */
+function rolesPart(b) {
+  const rows = [...b.hy.map((v, j) => ({ set: 'hy', j, fill: v, lab: `${hybH(b.hyb)} hybrid` })), ...b.p.map((v, j) => ({ set: 'p', j, fill: v, lab: '2p (unhybridized)' }))];
+  const pool = [...new Set([...b.roles.hy, ...b.roles.p, 'lone pair', 'empty', ...b.S.atoms[b.t].nb.map(j => `π bond to ${b.S.atoms[j].el}`)])];
+  const order = r => r === 'lone pair' ? 0 : /^σ/.test(r) ? 1 : /^π/.test(r) ? 2 : 3;
+  const opts = pool.sort((x, y) => order(x) - order(y) || x.localeCompare(y));
+  return { kind: 'roles', ask: 'Label what each orbital of atom 1 does in this molecule.', box: b, rows, opts,
+    answer: `${hybH(b.hyb)} hybrids: ${b.roles.hy.join(', ')}${b.roles.p.length ? `; 2p: ${b.roles.p.join(', ')}` : ''}`,
+    hint: '↑↓ in a hybrid = lone pair. ↑ in a hybrid = σ bond to a neighbor. ↑ in a leftover 2p = π bond. An empty 2p stays empty.',
+    solution: 'Hybrids point at neighbors (σ bonds) or hold lone pairs. Only the leftover 2p orbitals make π bonds.' };
+}
+function checkRoles(p, sel) {
+  const b = p.box, got = { hy: [], p: [] }, msgs = []; let slip = '';
+  p.rows.forEach(r => got[r.set].push(sel[r.set + r.j]));
+  const ms = a => [...a].sort().join('|');
+  if (ms(got.hy) === ms(b.roles.hy) && ms(got.p) === ms(b.roles.p)) return { ok: true };
+  if (got.hy.some(x => /^π/.test(x))) { slip = 'pi-from-hybrid'; msgs.push(SLIP['pi-from-hybrid']); }
+  if (got.p.some(x => /^σ|lone/.test(x))) { slip = slip || 'p-role'; msgs.push('The leftover 2p orbitals stand perpendicular to the hybrids: they make π bonds or stay empty, never σ bonds or lone pairs.'); }
+  p.rows.forEach(r => { if (r.set === 'hy' && r.fill === 2 && sel['hy' + r.j] !== 'lone pair') { slip = slip || 'forgot-lone-pairs'; msgs.push('A hybrid with ↑↓ (two electrons) holds a lone pair.'); } if (r.set === 'p' && r.fill === 0 && sel['p' + r.j] !== 'empty') { slip = slip || 'p-role'; msgs.push('An empty 2p has no electron to share, so it stays empty.'); } });
+  if (!msgs.length) { slip = 'orbital-role'; msgs.push(`Match the neighbors: atom 1 makes σ bonds to ${b.S.atoms[b.t].nb.map(j => b.S.atoms[j].el).join(', ')}${b.roles.p.some(x => /^π/.test(x)) ? ` and π bond${b.nPi > 1 ? 's' : ''} to ${b.roles.p.filter(x => /^π/.test(x)).map(x => x.slice(10)).join(', ')}` : ''}.`); }
+  return { ok: false, slip, why: [...new Set(msgs)].join(' ') };
+}
+/* σ or π? label each kind of bond, then count the whole molecule */
+const BTYPE = { 1: '1 σ', 2: '1 σ + 1 π', 3: '1 σ + 2 π' };
+function genBondType() {
+  const M = drawBag('btype', MULTI), S = multiSpec(M), rows = [], seen = {};
+  S.bonds.forEach((b, i) => { let A = S.atoms[b.a].el, B = S.atoms[b.b].el; if (RANK[A] > RANK[B]) [A, B] = [B, A]; const key = A + B + b.o; if (seen[key] != null) { rows[seen[key]].n++; return; } seen[key] = rows.length; rows.push({ bond: i, o: b.o, title: `${A}${b.o === 1 ? '–' : b.o === 2 ? '=' : '≡'}${B}`, n: 1 }); });
+  const c = sigmaPi(S), all = c.singles + 2 * c.doubles + 3 * c.triples;
+  const p1 = { kind: 'bondtype', ask: 'What is each numbered bond made of? Bonds with the same number are the same kind.', spec: S, rows, answer: rows.map((r, k) => `${k + 1} ${r.title}: ${BTYPE[r.o]}`).join(' · '), hint: 'Single = 1 σ. Double = 1 σ + 1 π. Triple = 1 σ + 2 π.', solution: 'Every bond has exactly one σ (head-on overlap). Extra bonds in a double or triple bond are π (side-by-side 2p).' };
+  const p2 = numPart(`Now count every bond in the whole ${F(M.f)} molecule.`, [
+    { key: 's', label: 'σ bonds', answer: c.s, diag: v => v === all && all !== c.s ? ['sigma-pi-total', SLIP['sigma-pi-total']] : v === rows.length ? ['count-kinds', 'Count every bond, not just the numbered kinds: each number can stand for several bonds.'] : v === c.s - c.h && c.h ? ['missed-CH-bonds', SLIP['missed-CH-bonds']] : ['sigma-count', 'One σ per line between two atoms, whatever the bond order.'] },
+    { key: 'p', label: 'π bonds', answer: c.p, diag: v => v === c.doubles + c.triples && c.triples ? ['pi-count', 'A triple bond has <b>two</b> π bonds.'] : ['pi-count', 'Double = 1 π, triple = 2 π, single = 0.'] }], { hint: 'Use your labels: add up the σ and π over every bond.', solution: rows.map(r => `${r.n} × ${r.title}`).join(' + ') + ` → <b>${c.s} σ</b>, <b>${c.p} π</b>.` });
+  return { topic: 'bondtype', tag: F(M.f), stem: `<p class="lead">${M.name[0].toUpperCase() + M.name.slice(1)}, ${F(M.f)}</p>`, tip: 'Single = 1σ. Double = 1σ + 1π. Triple = 1σ + 2π.', parts: [p1, p2] };
+}
+function checkBondType(p, sel) {
+  const msgs = []; let slip = '';
+  p.rows.forEach((r, k) => { const v = +sel[k]; if (v === r.o) return; const s = r.o === 1 ? 'pi-on-single' : v === 1 ? 'missed-pi' : 'pi-count';
+    slip = slip || s; msgs.push(`<b>Bond ${k + 1} (${r.title}):</b> ${r.o === 1 ? 'A single bond is only σ: no π.' : v === 1 ? `A ${r.o === 2 ? 'double' : 'triple'} bond has more than a σ: ${BTYPE[r.o]}.` : `A ${r.o === 2 ? 'double bond has one π' : 'triple bond has two π'}: ${BTYPE[r.o]}.`}`); });
+  return msgs.length ? { ok: false, slip, why: msgs.join('<br>') } : { ok: true };
+}
+/* MO reference: the neutral diatomic, so students reason from it */
+function refDiagram(el) {
+  const an = moAnalyze(el, 0);
+  return `<p class="lead">Reference: MO diagram of neutral ${F(an.f)} (BO ${fmtBO(an.bo)})</p><div class="mo-scroll">${moSvg(an, { mo: an.fill, ao: [aoFill(el), aoFill(el)], homo: an.homo })}</div><p class="note">Gold outline = HOMO. For a positive ion, remove electrons from the HOMO; for a negative ion, add them to the lowest MO with room. Then recount the bond order.</p>`;
 }
 function groundFill(atom) { const v = VAL[atom], p = v - 2; return { s: [2], p: [0, 1, 2].map(j => p >= 3 + j + 1 ? 2 : p >= j + 1 ? 1 : 0) }; }
 function boxSolution(b) {
@@ -1070,7 +1166,7 @@ function genTrends() {
   const ask = pick(['shortest', 'longest', 'strongest', 'weakest']), wantHigh = ask === 'shortest' || ask === 'strongest';
   const sorted = [...set].sort((x, y) => x.bo - y.bo), best = wantHigh ? sorted[2] : sorted[0], worst = wantHigh ? sorted[0] : sorted[2];
   const opts = set.map(s => s === best ? opt(F(s.f), true, `${F(s.f)} has the ${wantHigh ? 'highest' : 'lowest'} bond order (${fmtBO(s.bo)}), so its bond is the ${ask}.`) : opt(F(s.f), false, s === worst ? SLIP['bo-length-backwards'] + ` ${F(s.f)} has BO ${fmtBO(s.bo)}, the ${wantHigh ? 'lowest' : 'highest'}.` : `${F(s.f)} has BO ${fmtBO(s.bo)}. Compare all three bond orders.`, s === worst ? 'bo-length-backwards' : 'bo-compare'));
-  return { topic: 'trends', tag: 'bond order', stem: '', tip: 'Higher bond order → shorter, stronger bond (compare species of the same element).', parts: [choicePart(`Which has the <b>${ask}</b> bond?<br><span style="font-weight:600;font-size:.95rem">${set.map(s => F(s.f)).join(', ')}</span>`, opts, { hint: 'Find each bond order (build the MO filling in your head or on paper).', solution: sorted.map(s => `${F(s.f)}: BO ${fmtBO(s.bo)}`).join(' · ') + `. ${ask[0].toUpperCase() + ask.slice(1)}: ${F(best.f)}.` })] };
+  return { topic: 'trends', tag: 'bond order', stem: refDiagram(el), tip: 'Higher bond order → shorter, stronger bond (compare species of the same element).', parts: [choicePart(`Which has the <b>${ask}</b> bond?<br><span style="font-weight:600;font-size:.95rem">${set.map(s => F(s.f)).join(', ')}</span>`, opts, { hint: 'Find each bond order (build the MO filling in your head or on paper).', solution: sorted.map(s => `${F(s.f)}: BO ${fmtBO(s.bo)}`).join(' · ') + `. ${ask[0].toUpperCase() + ask.slice(1)}: ${F(best.f)}.` })] };
 }
 const IONIZE = [['H', 0, -1], ['C', 0, -1], ['N', 0, -1], ['O', 0, -1], ['F', 0, -1], ['B', 0, -1], ['N', 0, 1], ['O', 0, 1], ['C', 0, 1]];
 function genIonize() {
@@ -1344,6 +1440,102 @@ function checkLabeler(p, w) {
   return msgs.length ? { ok: false, slip, why: msgs.join('<br>') } : { ok: true };
 }
 
+/* ================= v3: Hybrid Mixer, Ranker, Theory Face-Off, typed Skill Check items ================= */
+const OPTS = { expanded: false };   // set by the UI: include sp3d/sp3d2 molecules only when that topic is turned on
+/* Hybrid Mixer: tap s, p and d cards into the mixer; it shows what they make */
+function mixName(c) { if (c.s !== 1) return null; return 'sp' + (c.p > 1 ? c.p : '') + (c.d ? 'd' + (c.d > 1 ? c.d : '') : ''); }
+function genMixer() {
+  const m = drawBag(OPTS.expanded ? 'mixerX' : 'mixer', MOLS.filter(x => OPTS.expanded || !info(x).expanded)), I = info(m);
+  const want = { s: 1, p: Math.min(I.groups - 1, 3), d: Math.max(0, I.groups - 4) };
+  const p1 = { kind: 'mixer', ask: `Make the hybrid orbitals for the central ${m.c}. Tap orbital cards into the mixer (tap again to take one out).`, mol: m, want, groups: I.groups,
+    answer: `1 s + ${want.p} p${want.d ? ` + ${want.d} d` : ''} → ${I.groups} ${hybH(I.hyb)} hybrids${I.groups <= 4 ? `, ${3 - want.p} p left over` : ''}`,
+    hint: `Count electron groups on ${m.c} (bonded atoms + lone pairs). You need one hybrid per group, and every hybrid set starts with exactly one s.`,
+    solution: `${I.nb} bonded atom${I.nb > 1 ? 's' : ''} + ${I.lpC} lone pair${I.lpC === 1 ? '' : 's'} = ${I.groups} groups → mix ${I.groups} orbitals → ${I.groups} ${hybH(I.hyb)} hybrids.` };
+  const p2 = choicePart(`Which way do ${I.groups} ${hybH(I.hyb)} hybrids point (electron-group geometry)?`, shapeOptions(m, 'eg'), { hint: 'Hybrids spread out as far apart as possible.', solution: `${I.eg}, ideal angle ${IDEAL[I.groups]}.` });
+  return { topic: 'mixer', tag: F(m.f) + (I.expanded ? ' · expanded octet' : ''), stem: lewisStem(m), tip: 'n orbitals in = n hybrids out. Always one s, then p orbitals, then d only for 5 or 6 groups.', parts: [p1, p2], mol: m };
+}
+function checkMixer(p, c) {
+  const n = c.s + c.p + c.d, m = p.mol, I = info(m);
+  if (!n) return null;
+  if (c.s !== 1) return { ok: false, slip: 'mixer-no-s', why: c.s ? 'Use only one s orbital: an atom has one valence s.' : 'Every set of hybrids starts with the one valence s orbital.' };
+  if (n !== p.groups) {
+    if (n === I.nb && I.lpC) return { ok: false, slip: 'forgot-lone-pairs', why: `You made ${n} hybrids, one per bonded atom. ` + SLIP['forgot-lone-pairs'] };
+    if (n === I.bondSum + I.lpC && I.bondSum !== I.nb) return { ok: false, slip: 'double-bond-two-groups', why: `You made ${n} hybrids. ` + SLIP['double-bond-two-groups'] };
+    return { ok: false, slip: 'hybrid-count', why: `You made ${n} hybrid${n > 1 ? 's' : ''}. ${m.c} has ${p.groups} electron groups, and ${SLIP['hybrid-count'].toLowerCase()}` };
+  }
+  if (c.d && c.p < 3) return { ok: false, slip: 'mixer-d-early', why: 'Use all three p orbitals before any d. d orbitals only join for 5 or 6 groups (sp³d, sp³d²).' };
+  return { ok: true };
+}
+/* Ranker: tap species into order by bond order / length / strength (same element, so bond order decides) */
+const RANK_FAM = { O: [0, 1, -1, -2], N: [0, 1, -2], F: [0, 1, -1], C: [0, -2, 1], B: [0, 1, -1] };
+function genRanker() {
+  const el = pick(Object.keys(RANK_FAM)); let set;
+  do { set = shuffle(RANK_FAM[el]).slice(0, el === 'O' ? 4 : 3).map(q => moAnalyze(el, q)); } while (new Set(set.map(s => s.bo)).size < set.length);
+  const k = pick(['bo', 'len', 'str']), asc = (a, b) => a.bo - b.bo;
+  const order = [...set].sort(k === 'len' ? (a, b) => b.bo - a.bo : asc);
+  const label = { bo: 'lowest → highest <b>bond order</b>', len: 'shortest → longest <b>bond</b>', str: 'weakest → strongest <b>bond</b>' }[k];
+  const p = { kind: 'rank', ask: `Put these in order, ${label}. Tap them in order.`, items: set, want: order.map(s => set.indexOf(s)), key: k,
+    answer: order.map(s => F(s.f)).join(' &lt; '), hint: 'Find each bond order: ½ (bonding − antibonding). For the same element, higher bond order → shorter, stronger bond.',
+    solution: order.map(s => `${F(s.f)}: BO ${fmtBO(s.bo)}`).join(' · ') + (k === 'len' ? '. Shortest bond = highest bond order.' : '.') };
+  return { topic: 'ranker', tag: F(el + '2') + ' family', stem: refDiagram(el), tip: 'Same element → bond order decides: higher BO → shorter, stronger bond.', parts: [p] };
+}
+function checkRank(p, order) {
+  if (order.length < p.items.length) return null;
+  if (order.every((x, i) => x === p.want[i])) return { ok: true };
+  if (order.every((x, i) => x === p.want[p.want.length - 1 - i])) return { ok: false, slip: p.key === 'bo' ? 'rank-reversed' : 'bo-length-backwards', why: p.key === 'bo' ? 'That order is backwards. Start with the lowest bond order.' : SLIP['bo-length-backwards'] + ' Your order is reversed.' };
+  const i = order.findIndex((x, j) => x !== p.want[j]), a = p.items[order[i]];
+  return { ok: false, slip: 'rank-order', why: `Check position ${i + 1}: ${F(a.f)} doesn’t go there. Work out each bond order, then sort.` };
+}
+/* Theory Face-Off: O2 and the magnet */
+function magnetSvg() {
+  return `<svg viewBox="0 -48 320 206" style="width:300px" role="img" aria-label="Liquid oxygen poured between the poles of a magnet stays stuck between the poles">
+   <path d="M60 150V60a100 100 0 0 1 200 0v90h-50V60a50 50 0 0 0-100 0v90z" fill="#e7ebf5" stroke="#3d4a73" stroke-width="3"/>
+   <rect x="60" y="118" width="50" height="34" fill="#d9577f"/><rect x="210" y="118" width="50" height="34" fill="#4b57d1"/>
+   <text x="85" y="141" text-anchor="middle" font-size="16" font-weight="800" fill="#fff">N</text><text x="235" y="141" text-anchor="middle" font-size="16" font-weight="800" fill="#fff">S</text>
+   <path d="M112 128q48 -14 96 0v14q-48 -12 -96 0z" fill="#7fb4ee" stroke="#346cc3" stroke-width="2"/>
+   <text x="160" y="112" text-anchor="middle" font-size="13" font-weight="800" fill="#346cc3">liquid O₂</text></svg>`;
+}
+function genO2Magnet() {
+  const an = moAnalyze('O', 0), lewis = molSvg({ atoms: [{ el: 'O', x: 0, y: 0, lp: 2 }, { el: 'O', x: 1, y: 0, lp: 2 }], bonds: [{ a: 0, b: 1, o: 2 }] }, { label: 'Lewis structure of O2' });
+  return { topic: 'o2magnet', tag: 'O₂', stem: `<div class="figure">${magnetSvg()}</div><p class="lead">Liquid O₂ sticks between the poles of a magnet. Its Lewis structure shows every electron paired:</p><div class="figure">${lewis}</div>`, tip: 'Unpaired electrons are pulled into a magnet (paramagnetic).', parts: [
+    choicePart('Which theory explains why O₂ is attracted to the magnet?', [
+      opt('Molecular orbital theory', true, 'MO theory puts O₂’s last two electrons in the two π*2p orbitals, one each (Hund’s rule): 2 unpaired electrons → paramagnetic.'),
+      opt('Lewis structures / valence bond theory', false, 'The Lewis structure of O₂ pairs every electron, so it predicts diamagnetic: wrong for real O₂.', 'theory-choice'),
+      opt('VSEPR theory', false, 'VSEPR predicts shapes, not magnetism.', 'theory-choice'),
+      opt('All three theories predict it', false, 'Only MO theory gets O₂’s unpaired electrons right. That is a famous win for MO theory.', 'theory-choice')], { hint: 'Which theory puts electrons into orbitals of equal energy, one at a time?', solution: 'MO theory: O₂ is paramagnetic.' }),
+    numPart('How many unpaired electrons does MO theory give O₂?', [{ key: 'u', label: 'Unpaired electrons', answer: an.unp, diag: v => v === 0 ? ['para-dia-flip', 'That is what the Lewis structure says. Fill the MO diagram: 12 valence electrons, and the last two go into the two π*2p orbitals one at a time.'] : v === 1 ? ['hund-violation', 'There are 2 electrons in the π*2p pair. ' + SLIP['hund-violation']] : ['unpaired-count', 'O₂ has 12 valence electrons. Fill σ2s, σ*2s, σ2p, π2p, then the π*2p pair.'] }], { hint: '12 valence electrons; O₂ uses σ2p below π2p.', solution: `${configTxt(an)}: 2 unpaired in π*2p.` }),
+    choicePart('Which MO holds those unpaired electrons?', [opt('π*2p', true, 'The two π*2p orbitals have the same energy, so the last two electrons go in one each.'), opt('π2p', false, 'π2p is full (4 electrons) in O₂.', 'ionize-wrong-mo'), opt('σ2p', false, 'σ2p holds a pair in O₂.', 'ionize-wrong-mo'), opt('σ*2p', false, 'σ*2p is empty in O₂.', 'ionize-wrong-mo')], { hint: 'Look at the highest occupied MO.', solution: 'π*2p (the HOMO of O₂).' })
+  ] };
+}
+const THEORY_OPTS = ['Molecular orbital theory', 'Valence bond theory (hybrid orbitals)', 'VSEPR theory', 'Both VB and MO theory'];
+const T_THEORY = [
+  { q: 'Which theory would you use to predict the <b>shape</b> of SF₄?', ok: 2, why: ['MO theory explains bonding and magnetism, but it is not how we predict shapes.', 'Hybridization follows from the shape; you need the electron groups (VSEPR) first.', '', 'Shape comes from counting electron groups: that is VSEPR.'] },
+  { q: 'Which theory would you use to predict whether O₂²⁻ is <b>paramagnetic</b>?', ok: 0, why: ['', 'VB/Lewis structures don’t place electrons in orbitals of equal energy, so they can miss unpaired electrons (like in O₂).', 'VSEPR says nothing about magnetism.', 'Only MO theory predicts magnetism reliably (remember O₂).'] },
+  { q: 'Which theory would you use to compare the bond strength of N₂ and N₂⁺?', ok: 0, why: ['', 'Lewis/VB structures can’t give a bond order for N₂⁺ (an odd number of electrons). MO bond order can: 3 vs 2.5.', 'VSEPR predicts shapes, not bond strengths.', 'VB has no good way to describe N₂⁺. MO bond order does it directly.'] },
+  { q: 'Which theory would you use to <b>name the orbitals</b> that overlap in a C–H bond of CH₄?', ok: 1, why: ['MO theory spreads orbitals over the whole molecule; it doesn’t name one atom’s orbital in one bond.', '', 'VSEPR gives the shape but not the orbitals.', 'This is VB language: C sp³ – H 1s. MO theory doesn’t describe single localized bonds this way.'] },
+  { q: 'Which theory describes the three identical C–O bonds of CO₃²⁻ in <b>one</b> picture, without resonance structures?', ok: 0, why: ['', 'VB needs several resonance structures to show the delocalized π electrons.', 'VSEPR only gives the trigonal planar shape.', 'VB needs resonance drawings; only MO uses one set of delocalized π orbitals.'] },
+  { q: 'Which theory can explain why <b>He₂</b> does not form?', ok: 3, why: ['MO theory does (bond order 0), but so does VB theory (no half-filled orbital on He).', 'VB theory does (He has no half-filled orbital), but MO theory does too (bond order 0).', 'VSEPR needs a molecule to exist first; it predicts shapes, not whether bonds form.', ''] }
+];
+function genTheory() { const it = drawBag('theory', T_THEORY); return { topic: 'theory', tag: 'which theory?', stem: '', tip: 'Shape → VSEPR. Which orbitals overlap → VB (hybrids). Magnetism, bond order of ions, delocalized π → MO.', parts: [choicePart(it.q, THEORY_OPTS.map((t, i) => opt(t, i === it.ok, i === it.ok ? 'Right tool for the job.' : it.why[i], 'theory-choice')), { keep: true, hint: 'Shape → VSEPR. Overlap names → VB. Magnetism and bond order → MO.', solution: THEORY_OPTS[it.ok] + '.' })] }; }
+/* typed answers (Skill Check Prep): no multiple choice */
+const normHyb = s => String(s).toLowerCase().replace(/[²]/g, '2').replace(/[³]/g, '3').replace(/[\s^\-_]/g, '').replace(/^hybrid/, '');
+function hybText(ask, want, slipFor, sol) { return { kind: 'text', ask, answer: hybH(want), want, check: v => { const n = normHyb(v); if (!/^sp\d?(d\d?)?$/.test(n)) return { ok: false, slip: 'format', why: 'Type a hybridization like sp, sp2 or sp3.' }; return n === want ? { ok: true } : Object.assign({ ok: false }, slipFor(n)); }, hint: 'Count electron groups: 2 → sp, 3 → sp2, 4 → sp3.', solution: sol, note: 'Type sp, sp2, sp3 (sp² and sp^2 work too).' }; }
+function genSCHyb() {
+  const m = drawBag(OPTS.expanded ? 'scHybX' : 'scHyb', MOLS.filter(x => OPTS.expanded || !info(x).expanded)), I = info(m);
+  const slipFor = n => { const g = +Object.keys(HYB).find(k => HYB[k] === n); const d = g ? groupSlip(m, g) : ['hyb-mismatch', '']; return { slip: d[0], why: (g ? `${n} fits ${g} groups. ` : '') + (d[1] || `${m.c} has ${I.groups} electron groups.`) }; };
+  return { topic: 'groups', tag: F(m.f) + ' (typed)', stem: lewisStem(m), parts: [hybText(`Type the hybridization of the central ${m.c}.`, I.hyb, slipFor, `${I.nb} bonded + ${I.lpC} lone pair${I.lpC === 1 ? '' : 's'} = ${I.groups} groups → ${hybH(I.hyb)}.`)] };
+}
+function genSCAtom() {
+  const M = drawBag('scAtom', MULTI.filter(x => x.lvl >= 2)), S = multiSpec(M);
+  const cand = S.atoms.map((a, i) => i).filter(i => S.atoms[i].el !== 'H' && S.atoms[i].nb.length >= 2), t = pick(cand), A = S.atoms[t];
+  const slipFor = n => { const d = tagSlip(A, n); return { slip: d[0], why: d[1] }; };
+  return { topic: 'tagger', tag: F(M.f) + ' (typed)', stem: `<p class="lead">${M.name[0].toUpperCase() + M.name.slice(1)}, ${F(M.f)}</p><div class="figure">${molSvg(S, { nums: { [t]: 1 }, label: 'Structure with one numbered atom' })}</div>`, parts: [hybText(`Type the hybridization of atom 1 (${A.el}).`, A.hyb, slipFor, `${A.nb.length} bonded + ${A.lp} lone pair${A.lp === 1 ? '' : 's'} = ${A.groups} groups → ${hybH(A.hyb)}.`)] };
+}
+function genSCBO() {
+  const [a, q] = drawBag('scBO', MO_SPECIES), an = moAnalyze(a, q);
+  return { topic: 'read', tag: F(an.f) + ' (typed)', stem: `<p class="lead">Use MO theory for <b>${F(an.f)}</b>. Sketch the diagram on paper.</p>`, parts: [numPart(`Find the bond order and the number of unpaired electrons in ${F(an.f)}.`, [{ key: 'bo', label: 'Bond order', answer: an.bo, show: fmtBO(an.bo), diag: boDiag(an) }, { key: 'u', label: 'Unpaired electrons', answer: an.unp, diag: () => ['unpaired-count', `Fill ${an.n} ${an.type === '1s' ? '' : 'valence '}electrons (${an.type === 'low' ? 'π2p below σ2p' : an.type === 'high' ? 'σ2p below π2p' : 'σ1s then σ*1s'}) and count single arrows.`] }], { hint: `${an.n} ${an.type === '1s' ? '' : 'valence '}electrons. BO = ½ (bonding − antibonding).`, solution: `${configTxt(an)}. BO = ½ (${an.bond} − ${an.anti}) = ${fmtBO(an.bo)}; ${an.unp} unpaired.` })] };
+}
+
 /* ---------- tiles + topics ---------- */
 const TOPICS = {
   whatbond: { label: 'What makes a bond', tile: 't1', gen: genWhatbond, video: 'hyb' },
@@ -1355,7 +1547,9 @@ const TOPICS = {
   table: { label: 'Hybrid table', tile: 't2', gen: genTable, video: 'hyb' },
   groups: { label: 'Hybridize the center', tile: 't2', gen: genGroups, video: 'vsepr' },
   angle: { label: 'Flat Lewis → real angle', tile: 't2', gen: genAngle, video: 'vsepr' },
-  boxes: { label: 'Orbital boxes', tile: 't2', gen: genBoxes, video: 'orbdiag' },
+  boxes: { label: 'Orbital boxes & roles', tile: 't2', gen: genBoxes, video: 'orbdiag' },
+  bondtype: { label: 'σ or π? Label & count', tile: 't2', gen: genBondType, video: 'hyb' },
+  mixer: { label: 'Hybrid Mixer', tile: 't2', gen: genMixer, video: 'hyb' },
   tagger: { label: 'Tag every atom', tile: 't2', gen: genTagger, video: 'hyb' },
   expanded: { label: 'sp³d and sp³d²', tile: 't2', gen: genExpanded, video: 'vsepr', badge: 'expanded octet' },
   count: { label: 'Count σ and π', tile: 't3', gen: genCount, video: 'hyb' },
@@ -1371,20 +1565,26 @@ const TOPICS = {
   builder: { label: 'MO Diagram Builder', tile: 't4', gen: genBuilder, video: 'mo2' },
   read: { label: 'Read a diagram', tile: 't4', gen: genRead, video: 'mo2' },
   trends: { label: 'Bond order trends', tile: 't4', gen: genTrends, video: 'mo2' },
-  ionize: { label: 'HOMO & ionization', tile: 't4', gen: genIonize, video: 'mo2' }
+  ranker: { label: 'Ranker', tile: 't4', gen: genRanker, video: 'mo2' },
+  ionize: { label: 'HOMO & ionization', tile: 't4', gen: genIonize, video: 'mo2' },
+  theory: { label: 'Which theory?', tile: 't4', gen: genTheory, video: 'mo1' },
+  o2magnet: { label: 'O₂ and the magnet', tile: 't4', gen: genO2Magnet, video: 'mo2' }
 };
 const TILES = [
   { id: 't1', title: 'Overlap Basics', blurb: 'What makes a bond. σ vs π overlap.', sec: '§8.1', topics: ['whatbond', 'pecurve', 'gallery', 'which', 'strength'],
     ideas: ['A covalent bond = two <b>half-filled</b> orbitals overlapping. The shared pair sits between the nuclei.', 'Bond length = distance at the lowest energy. Bond energy = depth of the energy well (H₂: 74 pm, 436 kJ/mol).', 'Head-on overlap → <b>σ</b> (density on the axis). Side-by-side p overlap → <b>π</b> (above and below).', 'More overlap → stronger bond. Shorter bonds overlap better, and a π bond is weaker than a σ bond (OpenStax Table 8.1).'] },
-  { id: 't2', title: 'Hybrid Workshop', blurb: 'sp, sp², sp³: groups → hybrids → shape.', sec: '§8.2', topics: ['why', 'table', 'groups', 'angle', 'boxes', 'tagger', 'expanded'],
+  { id: 't2', title: 'Hybrid Workshop', blurb: 'sp, sp², sp³: groups → hybrids → shape.', sec: '§8.2', topics: ['why', 'table', 'groups', 'angle', 'boxes', 'bondtype', 'mixer', 'tagger', 'expanded'],
     ideas: ['Electron groups = bonded atoms + lone pairs. A double or triple bond is <b>one</b> group.', 'Groups = hybrids: 2 → sp (180°), 3 → sp² (120°), 4 → sp³ (109.5°). Lone pairs sit in hybrids too.', 'n atomic orbitals in = n hybrids out. H is never hybridized.'] },
   { id: 't3', title: 'Sigma & Pi', blurb: 'Count σ/π, label overlaps, rotation.', sec: '§8.3', topics: ['count', 'skelcount', 'label', 'labeler', 'pisource', 'rotation', 'resonance', 'boss'],
     ideas: ['Single = 1σ. Double = 1σ + 1π. Triple = 1σ + 2π.', 'σ bonds use hybrids (or H 1s). π bonds use leftover <b>unhybridized p</b> orbitals.', 'A π bond blocks rotation. Resonance spreads π electrons over several atoms.', 'Line drawings hide the H atoms on carbon, but every C–H is still a σ bond.'] },
-  { id: 't4', title: 'MO Builder', blurb: 'Fill MO diagrams, bond order, magnetism.', sec: '§8.4', topics: ['lcao', 'ordering', 'builder', 'read', 'trends', 'ionize'],
+  { id: 't4', title: 'MO Builder', blurb: 'Fill MO diagrams, bond order, magnetism.', sec: '§8.4', topics: ['lcao', 'ordering', 'builder', 'read', 'trends', 'ranker', 'ionize', 'theory', 'o2magnet'],
     ideas: ['In phase → bonding MO. Out of phase → antibonding MO* (node between the nuclei).', 'Li₂–N₂: π2p below σ2p. O₂–Ne₂: σ2p below π2p. Count valence electrons and adjust for charge.', 'BO = ½ (bonding − antibonding). Higher BO → shorter, stronger bond. Any unpaired electron → paramagnetic.'] }
 ];
-const generate = t => { const q = TOPICS[t].gen(); q.topic = q.topic || t; return q; };
-if (typeof module !== 'undefined') module.exports = { parseSmi, layoutComp, skelInfo, SKEL, BOSS, checkLabeler, checkTapcurve, MOLS, MULTI, info, electronsOK, multiSpec, sigmaPi, moAnalyze, moLevels, moFill, aoFill, checkMO, checkAO, checkBoxes, BOXCASES, TOPICS, TILES, generate, ANGLE, scSpec, molSvg, MO_SPECIES, lpAngles };
+const SC_GEN = { scHyb: genSCHyb, scAtom: genSCAtom, scBO: genSCBO, count: genCount, skelcount: genSkelCount };
+const generate = t => { const q = (TOPICS[t] ? TOPICS[t].gen : SC_GEN[t])(); q.topic = q.topic || t; return q; };
+/* Daily 5 tiers: 2 easy → 2 medium → 1 hard */
+const TIER = { easy: ['whatbond', 'gallery', 'which', 'why', 'table', 'pisource', 'rotation', 'lcao', 'ordering', 'theory'], medium: ['pecurve', 'strength', 'groups', 'angle', 'boxes', 'bondtype', 'mixer', 'count', 'skelcount', 'label', 'resonance', 'read', 'trends', 'ranker'], hard: ['tagger', 'labeler', 'builder', 'ionize', 'boss', 'o2magnet'] };
+if (typeof module !== 'undefined') module.exports = { boxBank, checkRoles, checkBondType, genBondType, refDiagram, checkMixer, checkRank, genSCHyb, genSCAtom, genSCBO, normHyb, TIER, OPTS, parseSmi, layoutComp, skelInfo, SKEL, BOSS, checkLabeler, checkTapcurve, MOLS, MULTI, info, electronsOK, multiSpec, sigmaPi, moAnalyze, moLevels, moFill, aoFill, checkMO, checkAO, checkBoxes, BOXCASES, TOPICS, TILES, generate, ANGLE, scSpec, molSvg, MO_SPECIES, lpAngles };
 /*LOGIC-END*/
 </script>
 <script>
@@ -1407,7 +1607,7 @@ const tc = (P, ts) => [].concat(ts).reduce((n, t) => n + (P.topic[t] ? P.topic[t
 const tileC = (P, id) => tc(P, TILES.find(t => t.id === id).topics);
 const ACH = [
   ['first', 'First Overlap', 'Get your first answer right', 'stars', P => P.correct >= 1],
-  ['hybrid', 'Hybrid Mixer', '10 Hybrid Workshop questions right', 'molecule', P => tileC(P, 't2') >= 10],
+  ['hybrid', 'Hybrid Handler', '10 Hybrid Workshop questions right', 'molecule', P => tileC(P, 't2') >= 10],
   ['sp3', 'sp³ Specialist', 'Tag every atom right in 5 molecules', 'geometry', P => tc(P, 'tagger') >= 5],
   ['expanded', 'Expanded Octet', '5 sp³d / sp³d² questions right', 'lattice', P => tc(P, 'expanded') >= 5],
   ['pi', 'Pi Hunter', 'Count σ and π right 10 times', 'target', P => tc(P, ['count', 'skelcount', 'boss']) >= 10],
@@ -1417,8 +1617,27 @@ const ACH = [
   ['architect', 'MO Architect', 'Build 5 MO diagrams with no slips', 'scale', P => tc(P, 'builder') >= 5],
   ['boboss', 'Bond Order Boss', '10 bond-order questions right', 'medal', P => tc(P, ['builder', 'read', 'trends', 'ionize']) >= 10],
   ['magnet', 'Magnet Master', 'Call para/diamagnetic right 10 times', 'react', P => (P.mag || 0) >= 10],
-  ['champ', 'Challenge Champion', 'Score 8+ on a Challenge round', 'trophy', P => (P.bestCh || 0) >= 8]
+  ['champ', 'Challenge Champion', 'Score 8+ on a Challenge round', 'medal', P => (P.bestCh || 0) >= 8],
+  ['faceoff', 'Theory Face-Off Champion', 'Score 5+ of 6 in the Theory Face-Off', 'trophy', P => (P.bestFO || 0) >= 5],
+  ['skill', 'Skill Check Ready', 'Score 8+ on Skill Check Prep', 'checklist', P => (P.bestSC || 0) >= 8],
+  ['daily', 'Daily Habit', 'Finish the Daily 5 three days in a row', 'stars', P => (sharedStreak().best || 0) >= 3 && (P.dailyDone || 0) >= 1],
+  ['mixer', 'Hybrid Mixer Pro', 'Mix the right hybrids 5 times', 'molecule', P => tc(P, 'mixer') >= 5]
 ];
+const ROUND = {
+  challenge: { title: 'Challenge', strict: true, again: 'Another Challenge round' },
+  daily: { title: 'Daily 5', strict: false, again: 'Practice more' },
+  skill: { title: 'Skill Check Prep', strict: true, again: 'Another Skill Check Prep' },
+  faceoff: { title: 'Theory Face-Off', strict: true, again: 'Face-Off again' }
+};
+const FACEOFF_PLAN = ['o2magnet', 'theory', 'theory', 'ranker', 'theory', 'ionize'];
+const SKILL_PLAN = ['count', 'skelcount', 'count', 'scBO', 'scBO', 'scBO', 'scHyb', 'scHyb', 'scAtom', 'scAtom'];
+const SC_LABEL = { scHyb: 'Typed: hybridization', scAtom: 'Typed: atom hybridization', scBO: 'Typed: bond order' };
+const topicLabel = t => TOPICS[t] ? TOPICS[t].label : SC_LABEL[t] || t;
+const STREAK_KEY = 'itsdrdan-daily-streak', dayKey = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+const today = () => dayKey(new Date()), yesterday = () => { const d = new Date(); d.setDate(d.getDate() - 1); return dayKey(d); };
+function sharedStreak() { let s = {}; try { s = JSON.parse(localStorage.getItem(STREAK_KEY) || '{}') || {}; } catch (e) {} if (s.last && s.last !== today() && s.last !== yesterday()) return Object.assign({}, s, { streak: 0 }); return Object.assign({ streak: 0, best: 0 }, s); }
+function sharedStreakDone() { const s = sharedStreak(); if (s.last === today()) return s; s.streak = s.last === yesterday() ? (s.streak || 0) + 1 : 1; s.last = today(); s.best = Math.max(s.best || 0, s.streak); s.days = Object.assign({}, s.days, { [today()]: 1 }); const keep = Object.keys(s.days).sort().slice(-60); s.days = Object.fromEntries(keep.map(k => [k, 1])); try { localStorage.setItem(STREAK_KEY, JSON.stringify(s)); } catch (e) {} return s; }
+const faceoffOpen = () => tileC(P, 't2') >= 5 && tileC(P, 't4') >= 5;
 const CH_PLAN = ['which', 'gallery', 'strength', 'skelcount', 'boss', 'groups', 'angle', 'boxes', 'tagger', 'count', 'label', 'builder', 'ionize', 'trends', 'read', 'resonance', 'pecurve'];
 
 /* mascot: a p orbital (blue and coral lobes, node at the waist) */
@@ -1453,7 +1672,7 @@ function renderStats() {
 }
 function setCourse(c) {
   state.course = c; loadCourse(c);
-  state.sel = new Set((P.sel || []).filter(t => TOPICS[t])); state.mode = ['learn', 'practice', 'challenge'].includes(P.mode) ? P.mode : 'practice'; state.ch = null;
+  state.sel = new Set((P.sel || []).filter(t => TOPICS[t])); state.mode = ['learn', 'practice'].includes(P.mode) ? P.mode : 'practice'; state.ch = null;
   document.querySelectorAll('#course button').forEach(b => b.classList.toggle('active', b.dataset.course === c));
   $('eyebrow').textContent = EYEBROW[c];
   try { const u = new URL(location.href); u.searchParams.set('course', c); history.replaceState(null, '', u); } catch (e) {}
@@ -1467,7 +1686,13 @@ function renderChooser() {
   const open = TILES.filter(catOn);
   $('chipsWrap').hidden = !open.length;
   $('chips').innerHTML = open.map(c => `<div class="chip-row"><span>${c.title} · ${c.sec}</span>${c.topics.map(t => { const s = P.topic[t], T = TOPICS[t]; return `<button type="button" class="chip${state.sel.has(t) ? ' on' : ''}" data-topic="${t}" aria-pressed="${state.sel.has(t)}">${T.label}${T.badge ? ` <span class="ctag">${T.badge}</span>` : ''}${s && s.a ? ` <span class="cstat">${s.c}/${s.a}</span>` : ''}</button>`; }).join('')}</div>`).join('');
-  document.querySelectorAll('#modes button').forEach(b => { b.classList.toggle('active', b.dataset.mode === state.mode); b.setAttribute('aria-pressed', b.dataset.mode === state.mode); });
+  const curMode = state.ch ? state.ch.kind : state.mode;
+  document.querySelectorAll('#modes button').forEach(b => { b.classList.toggle('active', b.dataset.mode === curMode); b.setAttribute('aria-pressed', b.dataset.mode === curMode); });
+  const st = sharedStreak(), doneToday = st.last === today(), foOpen = faceoffOpen();
+  $('specials').innerHTML = `<button type="button" class="special${curMode === 'daily' ? ' on' : ''}" data-round="daily"><span class="ms-ico" data-icon="calendar" aria-hidden="true"></span><span><b>Daily 5</b><small>${doneToday ? 'Done today. ' : ''}2 easy, 2 medium, 1 hard${st.streak ? ` · ${st.streak}-day streak` : ''}.</small></span></button>`
+    + `<button type="button" class="special${curMode === 'skill' ? ' on' : ''}" data-round="skill"><span class="ms-ico" data-icon="clipboard" aria-hidden="true"></span><span><b>Skill Check Prep</b><small>10 typed answers, no multiple choice. Then a study plan.</small></span></button>`
+    + `<button type="button" class="special${curMode === 'faceoff' ? ' on' : ''}${foOpen ? '' : ' locked'}" data-round="faceoff" aria-disabled="${!foOpen}"><span class="ms-ico" data-icon="trophy" aria-hidden="true"></span><span><b>Theory Face-Off</b><small>${foOpen ? 'Boss round: VB vs MO. 6 questions.' : `Unlocks after 5 right in Hybrid Workshop (${Math.min(5, tileC(P, 't2'))}/5) and MO Builder (${Math.min(5, tileC(P, 't4'))}/5).`}</small></span></button>`;
+  paintIcons($('specials'));
 }
 function toggleCat(id) {
   const c = TILES.find(x => x.id === id);
@@ -1476,14 +1701,25 @@ function toggleCat(id) {
 }
 function toggleTopic(t) { state.sel.has(t) ? state.sel.delete(t) : state.sel.add(t); afterSelect(); }
 function afterSelect() { if (state.mode === 'challenge') state.mode = 'practice'; state.ch = null; save(); renderChooser(); refresh(); }
+function startRound(kind) {
+  if (kind === 'faceoff' && !faceoffOpen()) { toast('trophy', 'Theory Face-Off is locked', 'Get 5 right in Hybrid Workshop and 5 in MO Builder first.'); return; }
+  let plan;
+  if (kind === 'challenge') plan = shuffle(CH_PLAN).slice(0, 10);
+  if (kind === 'skill') plan = shuffle(SKILL_PLAN);
+  if (kind === 'faceoff') plan = FACEOFF_PLAN.slice();
+  if (kind === 'daily') { const pickN = (list, n) => { const out = []; let pool = list.filter(t => t !== 'boss' || state.sel.has('boss')); while (out.length < n && pool.length) { const t = weightedTopic(pool); out.push(t); pool = pool.filter(x => x !== t); } return out; }; plan = [...pickN(TIER.easy, 2), ...pickN(TIER.medium, 2), ...pickN(TIER.hard, 1)]; }
+  state.ch = { kind, plan, i: 0, results: [] }; state.learn = null;
+  renderChooser(); newQuestion(true); scrollToPlay();
+}
+const strict = () => !!(state.ch && ROUND[state.ch.kind].strict);
 function setMode(m) {
-  state.mode = m; state.ch = null; save(); renderChooser();
-  if (m === 'challenge') startChallenge(); else refresh();
+  if (m === 'challenge') { startRound('challenge'); return; }
+  state.mode = m; state.ch = null; save(); renderChooser(); refresh();
   scrollToPlay();
 }
 function refresh() {
   $('reportBox').hidden = true;
-  if (state.mode === 'challenge') { if (!state.ch) startChallenge(); return; }
+  if (state.ch) return;
   if (!state.sel.size) return showEmpty();
   if (state.mode === 'learn') return showLearn();
   newQuestion();
@@ -1500,6 +1736,7 @@ function weightedTopic(pool) {
 }
 let lastTopic = null;
 function makeQuestion() {
+  OPTS.expanded = state.sel.has('expanded');
   if (state.ch) return generate(state.ch.plan[state.ch.i]);
   let pool = [...state.sel]; if (pool.length > 1 && lastTopic) pool = pool.filter(t => t !== lastTopic || chance(0.3));
   const t = weightedTopic(pool.length ? pool : [...state.sel]); lastTopic = t; return generate(t);
@@ -1512,6 +1749,9 @@ function initWork(p) {
   if (p.kind === 'tag') return { tag: {}, sel: p.targets[0], marks: {} };
   if (p.kind === 'tapcurve') return { r: null };
   if (p.kind === 'labeler') return { sel: p.rows.map(() => ({})), cur: 0, marks: {} };
+  if (p.kind === 'mixer') return { in: [] };
+  if (p.kind === 'roles' || p.kind === 'bondtype') return { sel: {}, marks: {} };
+  if (p.kind === 'rank') return { order: [] };
   return null;
 }
 function newQuestion(focus) {
@@ -1520,13 +1760,13 @@ function newQuestion(focus) {
   state.work = initWork(q.parts[0]);
   $('emptyBox').hidden = true; $('learnBox').hidden = true; $('reportBox').hidden = true; $('playArea').hidden = false; $('skipBtn').hidden = false;
   const T = TOPICS[q.topic], tile = TILES.find(t => t.id === T.tile);
-  $('playTitle').textContent = state.ch ? 'Challenge' : state.sel.size > 1 ? 'Mixed practice' : T.label;
+  $('playTitle').textContent = state.ch ? ROUND[state.ch.kind].title : state.sel.size > 1 ? 'Mixed practice' : T.label;
   $('tileTag').textContent = tile.title + ' · ' + tile.sec; $('topicTag').innerHTML = T.label + (q.tag && q.tag !== T.label ? ' · ' + q.tag : '');
   $('quizTag').hidden = !state.ch; $('quizBar').hidden = !state.ch;
   if (state.ch) { $('quizTag').textContent = `Question ${state.ch.i + 1} of ${state.ch.plan.length}`; $('quizBar').firstElementChild.style.width = (state.ch.i / state.ch.plan.length * 100) + '%'; }
   $('stem').innerHTML = q.stem || '';
-  $('tip').innerHTML = q.tip && !state.ch ? `<div class="tipbox">${ico('bulb')}<span><b>Professor Tip:</b> ${q.tip}</span></div>` : '';
-  $('hintBtn').hidden = !!state.ch; $('solBtn').hidden = !!state.ch; $('actions').style.gridTemplateColumns = state.ch ? '1fr' : '';
+  $('tip').innerHTML = q.tip && !strict() ? `<div class="tipbox">${ico('bulb')}<span><b>Professor Tip:</b> ${q.tip}</span></div>` : '';
+  $('hintBtn').hidden = strict(); $('solBtn').hidden = strict(); $('actions').style.gridTemplateColumns = strict() ? '1fr' : '';
   $('hintBox').hidden = true; $('nextBtn').hidden = true; $('solBtn').classList.remove('pulse');
   setFeedback('', '');
   setVideoFor(T.video);
@@ -1542,6 +1782,7 @@ function doneHTML(p, i, n) {
   if (p.kind === 'mo') ans = `<div class="mo-scroll">${moSvg(p.an, { mo: p.an.fill, ao: [aoFill(p.an.atom), aoFill(p.an.atom)] })}</div>`;
   if (p.kind === 'boxes') ans = boxesHTML(p.box, null, true);
   if (p.kind === 'choice' && p.figure) ans = p.figure.replace(/ role="button" tabindex="0"/g, '') + ans;
+  if (p.kind === 'rank') ans = p.answer;
   if (p.kind === 'tapcurve') ans = `<div class="figure">${peSvg({ tap: true, r: 74 }).replace(/<rect data-pe[^>]*>/, '')}</div>${p.answer}`;
   return `<div class="part done"><div class="pnum">${ico('check')} Step ${i + 1} of ${n}</div><div class="ask">${p.ask}</div><div class="pans">${ans}</div>${p.solution && p.kind !== 'boxes' ? `<div class="psol">${p.solution}</div>` : p.kind === 'boxes' ? `<div class="psol">${p.solution}</div>` : ''}</div>`;
 }
@@ -1559,6 +1800,27 @@ function partBody(p) {
     return `<div class="figure">${svg}</div><div class="tagrows">${rows}</div><div class="checkrow"><button type="button" class="btn primary" data-check>Check</button></div>`;
   }
   if (p.kind === 'tapcurve') return `<div class="figure">${peSvg({ tap: true, r: w.r })}</div><div class="counter" aria-live="polite">${w.r == null ? 'Tap the curve to place your point.' : `Your point: ${Math.round(w.r)} pm`}</div><div class="checkrow"><button type="button" class="btn nudge" data-nudge="-2" aria-label="Move left 2 pm">◀</button><button type="button" class="btn nudge" data-nudge="2" aria-label="Move right 2 pm">▶</button><button type="button" class="btn primary" data-check>Check</button></div>`;
+  if (p.kind === 'roles') {
+    const arrows = v => v === 2 ? '↑↓' : v === 1 ? '↑' : '';
+    const rows = p.rows.map((r, k) => { const id = r.set + r.j, v = w.sel[id] || '', m = w.marks[id]; return `<div class="tagrow lrow${m ? ' ' + m : ''}"><span class="obox ro" aria-hidden="true">${arrows(r.fill)}</span><span class="te">${r.lab}</span><span class="lslots"><label>does <select data-role="${id}" aria-label="${r.lab} ${k + 1} with ${r.fill} electron${r.fill === 1 ? '' : 's'}: role"><option value="">Choose…</option>${p.opts.map(o => `<option${o === v ? ' selected' : ''}>${o}</option>`).join('')}</select></label></span></div>`; }).join('');
+    return `<div class="tagrows">${rows}</div><div class="checkrow"><button type="button" class="btn primary" data-check>Check</button></div>`;
+  }
+  if (p.kind === 'bondtype') {
+    const bnums = {}, bmarks = {}; p.rows.forEach((r, k) => { bnums[r.bond] = k + 1; if (w.marks[k]) bmarks[r.bond] = w.marks[k]; });
+    const svg = molSvg(p.spec, { bnums, bmarks, label: 'Structure with numbered bonds' });
+    const rows = p.rows.map((r, k) => `<div class="tagrow${w.marks[k] ? ' ' + w.marks[k] : ''}" data-btrow="${k}"><span class="tn">${k + 1}</span><span class="te">${r.title}${r.n > 1 ? ` <small style="color:var(--faint)">×${r.n}</small>` : ''}</span><span class="topts">${[1, 2, 3].map(o => `<button type="button" class="topt${String(w.sel[k]) === String(o) ? ' on' : ''}" data-btype="${k}:${o}" aria-pressed="${String(w.sel[k]) === String(o)}">${BTYPE[o]}</button>`).join('')}</span></div>`).join('');
+    return `<div class="figure">${svg}</div><div class="tagrows">${rows}</div><div class="checkrow"><button type="button" class="btn primary" data-check>Check</button></div>`;
+  }
+  if (p.kind === 'text') return `<div class="fields"><div class="field" id="field-t"><label for="in-t">Your answer</label><input id="in-t" type="text" autocomplete="off" autocapitalize="off" spellcheck="false"></div></div><div class="checkrow"><button type="button" class="btn primary" data-check>Check</button></div>${p.note ? `<p class="typing-note">${p.note}</p>` : ''}`;
+  if (p.kind === 'mixer') {
+    const c = mixCounts(w), name = mixName(c), n = c.s + c.p + c.d;
+    const card = (t, i, inBowl) => `<button type="button" class="mcard${!inBowl && w.in.includes(i) ? ' in' : ''}" data-mix="${i}" aria-pressed="${w.in.includes(i)}" aria-label="${t} orbital${w.in.includes(i) ? ', in the mixer' : ''}">${ORB_ART[t]}${t}</button>`;
+    const out = !n ? 'Tap cards to add them.' : c.s !== 1 ? `<span class="warn">${n} orbital${n > 1 ? 's' : ''} in. Every hybrid set starts with one s.</span>` : n === 1 ? '<span class="warn">One orbital alone doesn’t mix. Add p orbitals.</span>' : c.d && c.p < 3 ? '<span class="warn">d orbitals join only after all three p (sp³d, sp³d²).</span>' : `${n} orbitals in → <b>${n} ${hybH(name)} hybrids</b>${c.p < 3 ? ` + ${3 - c.p} unhybridized p` : ''}`;
+    return `<div class="mixer"><div class="tray" role="group" aria-label="Orbital cards">${MIX_CARDS.map((t, i) => card(t, i, false)).join('')}</div><div class="bowl" aria-label="Mixer">${w.in.length ? w.in.map(i => card(MIX_CARDS[i], i, true)).join('') : '<span class="empty-note">Mixer is empty</span>'}</div><div class="mixout" aria-live="polite">${out}</div></div><div class="checkrow"><button type="button" class="btn primary" data-check>Check</button><button type="button" class="btn" data-clear>Clear</button></div>`;
+  }
+  if (p.kind === 'rank') {
+    return `<div class="ranklist">${p.items.map((s, i) => { const k = w.order.indexOf(i); return `<button type="button" class="rankbtn${k >= 0 ? ' on' : ''}" data-rank="${i}" aria-label="${s.f.replace('^', ' ')}${k >= 0 ? ', position ' + (k + 1) : ''}"><span class="pos">${k >= 0 ? k + 1 : ''}</span><span>${F(s.f)}</span></button>`; }).join('')}</div><div class="checkrow"><button type="button" class="btn primary" data-check>Check</button><button type="button" class="btn" data-clear>Clear</button></div>`;
+  }
   if (p.kind === 'labeler') {
     const bnums = {}, bmarks = {}; p.rows.forEach((r, k) => { bnums[r.bond] = k + 1; if (w.marks[r.bond]) bmarks[r.bond] = w.marks[r.bond]; });
     const svg = molSvg(p.spec, { bnums, bmarks, bsel: p.rows[w.cur] && p.rows[w.cur].bond, label: 'Structure with numbered bonds to label' });
@@ -1609,6 +1871,11 @@ function checkCurrent() {
   if (p.kind === 'boxes') { const r = checkBoxes(p.box, state.work); return r.ok ? right() : wrong(r.slip, r.why); }
   if (p.kind === 'ao') { const r = checkAO(p.an, state.work.ao); return r.ok ? right() : wrong(r.slip, r.why); }
   if (p.kind === 'mo') { const r = checkMO(p.an, state.work.mo); return r.ok ? right() : wrong(r.slip, r.why); }
+  if (p.kind === 'text') { const raw = $('in-t').value.trim(); if (!raw) return setFeedback('info', 'Type an answer first.'); const r = p.check(raw); $('field-t').classList.toggle('good', r.ok); $('field-t').classList.toggle('bad', !r.ok); return r.ok ? right() : wrong(r.slip, r.why); }
+  if (p.kind === 'roles') { const w = state.work; if (p.rows.some(r => !w.sel[r.set + r.j])) return setFeedback('info', 'Choose a job for every orbital first.'); const r = checkRoles(p, w.sel); w.marks = {}; if (!r.ok) { const ms = a => [...a].sort().join('|'); ['hy', 'p'].forEach(set => { const got = p.rows.filter(x => x.set === set).map(x => w.sel[x.set + x.j]); if (ms(got) !== ms(p.box.roles[set])) p.rows.filter(x => x.set === set).forEach(x => w.marks[x.set + x.j] = 'no'); }); } rerenderCurrent(); return r.ok ? right() : wrong(r.slip, r.why); }
+  if (p.kind === 'bondtype') { const w = state.work; if (p.rows.some((r, k) => !w.sel[k])) return setFeedback('info', 'Pick σ/π for every numbered bond first.'); const r = checkBondType(p, w.sel); w.marks = {}; p.rows.forEach((x, k) => { w.marks[k] = +w.sel[k] === x.o ? 'ok' : 'no'; }); rerenderCurrent(); return r.ok ? right() : wrong(r.slip, r.why); }
+  if (p.kind === 'mixer') { const r = checkMixer(p, mixCounts(state.work)); if (!r) return setFeedback('info', 'Put some orbital cards in the mixer first.'); return r.ok ? right() : wrong(r.slip, r.why); }
+  if (p.kind === 'rank') { const r = checkRank(p, state.work.order); if (!r) return setFeedback('info', 'Tap every species to put them all in order.'); return r.ok ? right() : wrong(r.slip, r.why); }
   if (p.kind === 'tapcurve') { const r = checkTapcurve(state.work.r); if (!r) return setFeedback('info', 'Tap the curve first.'); return r.ok ? right() : wrong(r.slip, r.why); }
   if (p.kind === 'labeler') {
     const w = state.work; if (p.rows.some((r, k) => !w.sel[k] || w.sel[k].s == null || w.sel[k].s === '' || (r.p && (w.sel[k].p == null || w.sel[k].p === '')))) return setFeedback('info', 'Choose an overlap for every σ and π box first.');
@@ -1629,13 +1896,13 @@ function choose(k) {
   else { btns.forEach(b => { b.classList.add('wrong'); if ('disabled' in b) b.disabled = true; }); wrong(c.slip, c.why); }
 }
 function ddLog(ok, slip) {
-  try { if (state.logged || !window.ddTrack) return; state.logged = true; const q = state.q; window.ddTrack({ game: 'bondingtheories', course: state.course, mode: state.ch ? 'Challenge' : state.mode === 'learn' ? 'Learn' : 'Practice', topic: TOPICS[q.topic].label, correct: !!ok, tries: ok ? '' : 'slip:' + (slip || 'other'), slip: ok ? '' : (slip || 'other') }); } catch (e) {}
+  try { if (state.logged || !window.ddTrack) return; state.logged = true; const q = state.q; window.ddTrack({ game: 'bondingtheories', course: state.course, mode: state.ch ? ROUND[state.ch.kind].title : state.mode === 'learn' ? 'Learn' : 'Practice', topic: TOPICS[q.topic].label, correct: !!ok, tries: ok ? '' : 'slip:' + (slip || 'other'), slip: ok ? '' : (slip || 'other') }); } catch (e) {}
 }
 function wrong(slip, why) {
   const p = state.q.parts[state.pi];
   if (!state.wrong) { state.wrong = true; ddLog(false, slip); if (P.streak) { P.streak = 0; save(); renderStats(); } }
   setMood('oops', 2200);
-  if (state.ch) { setFeedback('bad', `<b>Not quite.</b> ${why || ''}<div class="sol">Answer: <b>${answerText(p)}</b>. ${p.solution || ''}</div>`); advancePart(true); return; }
+  if (strict()) { setFeedback('bad', `<b>Not quite.</b> ${why || ''}<div class="sol">Answer: <b>${answerText(p)}</b>. ${p.solution || ''}</div>`); advancePart(true); return; }
   state.tries = (state.tries || 0) + 1;
   setFeedback('bad', `<b>Not quite.</b> ${why || 'Check that step and try again.'}${state.tries >= 2 ? '<br>Stuck? Try <b>Hint</b> or <b>Show step</b>.' : ''}`);
   if (state.tries >= 2) $('solBtn').classList.add('pulse');
@@ -1666,7 +1933,7 @@ function finishQuestion() {
   if (ok) { P.correct++; P.streak++; P.best = Math.max(P.best, P.streak); xp = 15 + (state.helped ? 0 : 5) + 2 * Math.min(P.streak, 5); }
   P.xp += xp;
   if (state.ch) state.ch.results.push({ topic: q.topic, tag: q.tag, ok });
-  setFeedback(ok ? 'good' : 'info', ok ? `<b>${pick(['All steps right!', 'Nailed it!', 'Great bonding!', 'Perfect overlap!'])}</b> <span class="xp-pop">+${xp} XP</span> The worked steps are above.` : `<b>Done.</b> <span class="xp-pop">+${xp} XP</span> Check the worked steps above${state.ch ? '.' : ', then try another one like it to lock it in.'}`);
+  setFeedback(ok ? 'good' : 'info', ok ? `<b>${pick(['All steps right!', 'Nailed it!', 'Great bonding!', 'Perfect overlap!'])}</b> <span class="xp-pop">+${xp} XP</span> The worked steps are above.` : `<b>Done.</b> <span class="xp-pop">+${xp} XP</span> Check the worked steps above${strict() ? '.' : ', then try another one like it to lock it in.'}`);
   if (ok) setMood(P.streak && P.streak % 5 === 0 ? 'victory' : 'correct');
   $('nextBtn').hidden = false; $('nextBtn').innerHTML = (state.ch && state.ch.i === state.ch.plan.length - 1 ? 'See my results ' : 'Next question ') + ico('arrow');
   if (!coarse()) try { $('nextBtn').focus({ preventScroll: true }); } catch (e) {}
@@ -1697,6 +1964,13 @@ function cycle(spec) {
 }
 function tagSelect(t) { const w = state.work; if (!w || w.tag === undefined) return; w.sel = t; rerenderCurrent(`[data-row="${t}"] .topt`); }
 function tagSet(t, o) { const w = state.work; w.tag[t] = o; w.sel = t; delete w.marks[t]; const p = state.q.parts[state.pi]; const nextT = p.targets.find(x => !w.tag[x]); if (nextT != null) w.sel = nextT; rerenderCurrent(); }
+const MIX_CARDS = ['s', 'p', 'p', 'p', 'd', 'd'];
+const ORB_ART = {
+  s: '<svg viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="15" fill="#8fb8f0" stroke="#346cc3" stroke-width="2"/></svg>',
+  p: '<svg viewBox="0 0 44 44" aria-hidden="true"><ellipse cx="22" cy="12" rx="8" ry="10" fill="#8fb8f0" stroke="#346cc3" stroke-width="2"/><ellipse cx="22" cy="32" rx="8" ry="10" fill="#f6a99a" stroke="#bf5266" stroke-width="2"/></svg>',
+  d: '<svg viewBox="0 0 44 44" aria-hidden="true"><g stroke-width="2"><ellipse cx="13" cy="13" rx="6" ry="9" transform="rotate(-45 13 13)" fill="#8fb8f0" stroke="#346cc3"/><ellipse cx="31" cy="31" rx="6" ry="9" transform="rotate(-45 31 31)" fill="#8fb8f0" stroke="#346cc3"/><ellipse cx="31" cy="13" rx="6" ry="9" transform="rotate(45 31 13)" fill="#f6a99a" stroke="#bf5266"/><ellipse cx="13" cy="31" rx="6" ry="9" transform="rotate(45 13 31)" fill="#f6a99a" stroke="#bf5266"/></g></svg>'
+};
+function mixCounts(w) { const c = { s: 0, p: 0, d: 0 }; w.in.forEach(i => c[MIX_CARDS[i]]++); return c; }
 function peTap(e, rect) {
   if (!state.work || state.done) return; const svg = rect.ownerSVGElement, pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
   const sp = pt.matrixTransform(svg.getScreenCTM().inverse()); state.work.r = Math.max(30, Math.min(290, PE.R(sp.x))); rerenderCurrent();
@@ -1740,24 +2014,25 @@ function renderLearn(tiles, tile, topics) {
 }
 
 /* ---------- Challenge ---------- */
-function startChallenge() {
-  const plan = shuffle(CH_PLAN).slice(0, 10);
-  state.ch = { plan, i: 0, results: [] };
-  newQuestion(true);
-}
+function startChallenge() { startRound('challenge'); }
 function showReport() {
-  const z = state.ch, score = z.results.filter(r => r.ok).length;
-  P.bestCh = Math.max(P.bestCh || 0, score); save(); checkAch(); renderStats();
+  const z = state.ch, R = ROUND[z.kind], n = z.results.length, score = z.results.filter(r => r.ok).length, frac = score / n;
+  let extra = '';
+  if (z.kind === 'challenge') P.bestCh = Math.max(P.bestCh || 0, score);
+  if (z.kind === 'skill') P.bestSC = Math.max(P.bestSC || 0, score);
+  if (z.kind === 'faceoff') P.bestFO = Math.max(P.bestFO || 0, score);
+  if (z.kind === 'daily') { const first = sharedStreak().last !== today(), st = sharedStreakDone(); P.dailyDone = (P.dailyDone || 0) + 1; if (first) { P.xp += 20; extra = `<p><b>${st.streak}-day streak!</b> <span class="xp-pop">+20 bonus XP</span> Come back tomorrow to keep it going.</p>`; } else extra = `<p>${st.streak}-day streak. Today’s Daily 5 already counted; come back tomorrow.</p>`; }
+  save(); checkAch(); renderStats();
   const missed = [...new Set(z.results.filter(r => !r.ok).map(r => r.topic))];
   $('playArea').hidden = true; $('skipBtn').hidden = true; const box = $('reportBox'); box.hidden = false;
-  box.innerHTML = `<span class="ex-label">Challenge results</span><div class="report-score"><b>${score} / ${z.results.length}</b><span>${score >= 9 ? 'Excellent. You’re ready!' : score >= 7 ? 'Solid. Polish the topics below.' : 'Good practice. Work on the topics below.'}</span></div>
-   <ul class="report-list">${z.results.map((r, i) => `<li class="${r.ok ? 'ok' : ''}">${r.ok ? '✓' : '✗'} ${i + 1}. ${TOPICS[r.topic].label}${r.tag ? ' · ' + r.tag : ''}</li>`).join('')}</ul>
+  box.innerHTML = `<span class="ex-label">${R.title} results</span><div class="report-score"><b>${score} / ${n}</b><span>${z.kind === 'faceoff' ? (score >= 5 ? 'Face-Off Champion! You know which theory to use.' : 'Good fight. Review the theories below.') : frac >= 0.9 ? 'Excellent. You’re ready!' : frac >= 0.7 ? 'Solid. Polish the topics below.' : 'Good practice. Work on the topics below.'}</span></div>${extra}
+   <ul class="report-list">${z.results.map((r, i) => `<li class="${r.ok ? 'ok' : ''}">${r.ok ? '✓' : '✗'} ${i + 1}. ${topicLabel(r.topic)}${r.tag ? ' · ' + r.tag : ''}</li>`).join('')}</ul>
    ${missed.length ? `<p><b>Study plan:</b> practice these next.</p><div class="ex-actions"><button type="button" class="btn primary" id="practiceMissed">Practice my missed topics ${ico('arrow')}</button></div>` : '<p>No misses. Try another round!</p>'}
-   <div class="ex-actions"><button type="button" class="btn" id="chAgain">Another Challenge round</button></div>`;
-  state.ch = null;
-  $('chAgain').onclick = () => { state.mode = 'challenge'; startChallenge(); renderChooser(); };
-  if ($('practiceMissed')) $('practiceMissed').onclick = () => { state.sel = new Set(missed); state.mode = 'practice'; save(); renderChooser(); newQuestion(true); scrollToPlay(); };
-  setMood(score >= 8 ? 'victory' : score >= 6 ? 'correct' : 'thinking'); if (score >= 8) confetti();
+   <div class="ex-actions"><button type="button" class="btn" id="chAgain">${R.again}</button></div>`;
+  const kind = z.kind; state.ch = null; renderChooser();
+  $('chAgain').onclick = () => { if (kind === 'daily') { state.mode = 'practice'; renderChooser(); refresh(); } else startRound(kind); };
+  if ($('practiceMissed')) $('practiceMissed').onclick = () => { state.sel = new Set(missed.map(t => TOPICS[t] ? t : ({ scHyb: 'groups', scAtom: 'tagger', scBO: 'read' })[t])); state.mode = 'practice'; save(); renderChooser(); newQuestion(true); scrollToPlay(); };
+  setMood(frac >= 0.8 ? 'victory' : frac >= 0.6 ? 'correct' : 'thinking'); if (frac >= 0.8) confetti();
 }
 
 /* ---------- achievements, toasts, confetti ---------- */
@@ -1802,6 +2077,7 @@ function renderSheet() {
 function bind() {
   $('course').addEventListener('click', e => { const b = e.target.closest('button[data-course]'); if (b && b.dataset.course !== state.course) setCourse(b.dataset.course); });
   $('modes').addEventListener('click', e => { const b = e.target.closest('button[data-mode]'); if (b) setMode(b.dataset.mode); });
+  $('specials').addEventListener('click', e => { const b = e.target.closest('[data-round]'); if (b) startRound(b.dataset.round); });
   document.addEventListener('click', e => {
     const t = e.target;
     const cat = t.closest('[data-cat]'); if (cat) return toggleCat(cat.dataset.cat);
@@ -1813,6 +2089,10 @@ function bind() {
     const to = t.closest('#parts [data-tagopt]'); if (to) { const [a, o] = to.dataset.tagopt.split(':'); return tagSet(+a, o); }
     const at = t.closest('#parts [data-atom]'); if (at) return tagSelect(+at.dataset.atom);
     const pe = t.closest('#parts [data-pe]'); if (pe) return peTap(e, pe);
+    const bt = t.closest('#parts [data-btype]'); if (bt) { const [k, o] = bt.dataset.btype.split(':'); if (state.done) return; state.work.sel[k] = o; delete state.work.marks[k]; return rerenderCurrent(`[data-btype="${k}:${o}"]`); }
+    const bb = t.closest('#parts [data-bond]'); if (bb && state.q && state.q.parts[state.pi] && state.q.parts[state.pi].kind === 'bondtype') { const k = state.q.parts[state.pi].rows.findIndex(r => r.bond === +bb.dataset.bond); const el = document.querySelector(`#parts [data-btype="${k}:1"]`); if (el) try { el.focus(); el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {} return; }
+    const mx = t.closest('#parts [data-mix]'); if (mx) { const w = state.work, i = +mx.dataset.mix; if (state.done || !w) return; w.in = w.in.includes(i) ? w.in.filter(x => x !== i) : w.in.concat(i); return rerenderCurrent(`[data-mix="${i}"]`); }
+    const rk = t.closest('#parts [data-rank]'); if (rk) { const w = state.work, i = +rk.dataset.rank; if (state.done || !w) return; w.order = w.order.includes(i) ? w.order.filter(x => x !== i) : w.order.concat(i); return rerenderCurrent(`[data-rank="${i}"]`); }
     const nu = t.closest('#parts [data-nudge]'); if (nu) return peNudge(+nu.dataset.nudge);
     const bd = t.closest('#parts [data-bond]'); if (bd) return bondSelect(+bd.dataset.bond);
     const lr = t.closest('#parts [data-lrow]'); if (lr && !t.closest('select')) { state.work.cur = +lr.dataset.lrow; document.querySelectorAll('#parts .lrow').forEach(x => x.classList.toggle('sel', x === lr)); return; }
@@ -1825,6 +2105,7 @@ function bind() {
     const v = t.closest('[data-video]'); if (v) { setVideoFor(v.dataset.video); const pl = $('player'); pl.src = pl.dataset.src; }
   });
   document.addEventListener('change', e => {
+    const rs = e.target.closest && e.target.closest('#parts [data-role]'); if (rs && state.work && state.work.sel) { state.work.sel[rs.dataset.role] = rs.value; delete state.work.marks[rs.dataset.role]; rs.closest('.lrow').classList.remove('no', 'ok'); return; }
     const sl = e.target.closest && e.target.closest('#parts [data-lslot]'); if (!sl || !state.work || !state.work.sel) return;
     const [k, slot] = sl.dataset.lslot.split(':'); state.work.sel[+k][slot] = sl.value; state.work.cur = +k;
     const p = state.q.parts[state.pi], row = sl.closest('.lrow'); delete state.work.marks[p.rows[+k].bond]; row.classList.remove('ok', 'no');
@@ -1834,7 +2115,7 @@ function bind() {
     if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); g.dispatchEvent(new MouseEvent('click', { bubbles: true })); return; }
     if (e.key === 'Enter' && e.target.closest && e.target.closest('#parts input')) { e.preventDefault(); checkCurrent(); }
   });
-  $('skipBtn').onclick = () => { if (state.ch) { if (!state.done) { while (!state.done) showStep(); } return; } newQuestion(true); scrollToPlay(); };
+  $('skipBtn').onclick = () => { if (strict()) { if (!state.done) { while (!state.done) showStep(); } return; } newQuestion(true); scrollToPlay(); };
   $('nextBtn').onclick = next;
   $('hintBtn').onclick = showHint; $('solBtn').onclick = showStep;
   $('sheetBtn').onclick = () => { renderSheet(); try { $('sheetDialog').showModal(); } catch (e) { $('sheetDialog').setAttribute('open', ''); } };
@@ -1850,6 +2131,8 @@ function init() {
   if (!COURSES.includes(c)) { try { c = JSON.parse(localStorage.getItem(STORE) || '{}').last; } catch (e) {} }
   if (!COURSES.includes(c)) c = '1A';
   bind(); setCourse(c); paintIcons();
+  let m = ''; try { m = (new URLSearchParams(location.search).get('mode') || '').toLowerCase(); } catch (e) {}
+  if (['daily', 'skill', 'challenge', 'faceoff'].includes(m)) startRound(m); else if (m === 'learn' || m === 'practice') setMode(m);
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 </script>
