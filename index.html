@@ -1762,8 +1762,10 @@ const T4_CONCEPT = [
 const genMOConcept = () => staticQ('moconcept', Object.assign({ tip: 'Unpaired electrons → paramagnetic. n AOs → n MOs. Electron energy decides ionization.' }, drawBag('t4con', T4_CONCEPT)));
 /* ================= v8: Orbital Studio: place orbitals on atoms in 3D, then label the overlaps ================= */
 /* Oblique 3D view: x to the right (the internuclear axis), y up, z toward the viewer (drawn down-left). */
-const ST_U = 104, ST_Z = [0.52, 0.44];
-const stProj = (x, y, z) => ({ x: (x - z * ST_Z[0]) * ST_U, y: (-y + z * ST_Z[1]) * ST_U });
+/* view: cabinet-style oblique (z foreshortened) plus mild perspective, so atoms behind the page (−z) draw smaller and closer in, like a dash, and atoms in front (+z) draw a bit larger, like a wedge */
+const ST_U = 104, ST_Z0 = [0.34, 0.38], ST_PERSP = 0.09, ST_SIZE = 0.2;
+let ST_Z = ST_Z0;   /* a molecule may set its own view (C2H4: looking down onto its plane, as textbooks draw it) */
+const stProj = (x, y, z) => { const f = 1 + ST_PERSP * z; return { x: (x - z * ST_Z[0]) * ST_U * f, y: (-y + z * ST_Z[1]) * ST_U * f, f: Math.max(0.7, 1 + ST_SIZE * z) }; };
 const stDir = (d) => { const px = d[0] - d[2] * ST_Z[0], py = -d[1] + d[2] * ST_Z[1], l = Math.hypot(px, py); return { ux: l ? px / l : 0, uy: l ? py / l : -1, l }; };
 const TET = [[0, 1, 0], [0.943, -0.333, 0], [-0.471, -0.333, 0.816], [-0.471, -0.333, -0.816]].map(([x, y, z]) => { const t = 35 * Math.PI / 180; return [x * Math.cos(t) + z * Math.sin(t), y, -x * Math.sin(t) + z * Math.cos(t)]; });   /* turned 35° so no H hides behind the center */
 const ORB_DIR = { px: [1, 0, 0], py: [0, 1, 0], pz: [0, 0, 1] };
@@ -1780,7 +1782,7 @@ const STUDIO = [
   { f: 'CH4', atoms: [['C', 0, 0, 0], ...TET.map(d => ['H', d[0] * 1.05, d[1] * 1.05, d[2] * 1.05])], bonds: [[0, 1, 1], [0, 2, 1], [0, 3, 1], [0, 4, 1]], sets: { 0: [['sp3']] } },
   { f: 'NH3', atoms: [['N', 0, 0, 0], ...TET.slice(1).map(d => ['H', d[0] * 1.05, d[1] * 1.05, d[2] * 1.05])], bonds: [[0, 1, 1], [0, 2, 1], [0, 3, 1]], lp: { 0: [TET[0]] }, sets: { 0: [['sp3']] } },
   { f: 'H2O', atoms: [['O', 0, 0, 0], ['H', 0.86, -0.61, 0], ['H', -0.86, -0.61, 0]], bonds: [[0, 1, 1], [0, 2, 1]], lp: { 0: [[0, 0.577, 0.816], [0, 0.577, -0.816]] }, sets: { 0: [['sp3']] } },
-  { f: 'C2H4', atoms: [['C', -0.72, 0, 0], ['C', 0.72, 0, 0], ['H', -1.32, 0, 1.0], ['H', -1.32, 0, -1.0], ['H', 1.32, 0, 1.0], ['H', 1.32, 0, -1.0]], bonds: [[0, 1, 2], [0, 2, 1], [0, 3, 1], [1, 4, 1], [1, 5, 1]], plane: 'xz', sets: { 0: [['sp2', 'py']], 1: [['sp2', 'py']] } },
+  { f: 'C2H4', atoms: [['C', -0.72, 0, 0], ['C', 0.72, 0, 0], ['H', -1.32, 0, 1.0], ['H', -1.32, 0, -1.0], ['H', 1.32, 0, 1.0], ['H', 1.32, 0, -1.0]], bonds: [[0, 1, 2], [0, 2, 1], [0, 3, 1], [1, 4, 1], [1, 5, 1]], plane: 'xz', view: [0.14, 0.4], sets: { 0: [['sp2', 'py']], 1: [['sp2', 'py']] } },
   { f: 'C2H2', atoms: [['H', -1.65, 0, 0], ['C', -0.6, 0, 0], ['C', 0.6, 0, 0], ['H', 1.65, 0, 0]], bonds: [[0, 1, 1], [1, 2, 3], [2, 3, 1]], sets: { 1: [['sp', 'py', 'pz']], 2: [['sp', 'py', 'pz']] } },
   { f: 'HCN', atoms: [['H', -1.6, 0, 0], ['C', -0.5, 0, 0], ['N', 0.65, 0, 0]], bonds: [[0, 1, 1], [1, 2, 3]], lp: { 2: [[1, 0, 0]] }, sets: { 1: [['sp', 'py', 'pz']], 2: [['sp', 'py', 'pz'], ['px', 'py', 'pz']] } },
   { f: 'N2', atoms: [['N', -0.6, 0, 0], ['N', 0.6, 0, 0]], bonds: [[0, 1, 3]], lp: { 0: [[-1, 0, 0]], 1: [[1, 0, 0]] }, sets: { 0: [['sp', 'py', 'pz'], ['px', 'py', 'pz']], 1: [['sp', 'py', 'pz'], ['px', 'py', 'pz']] } }
@@ -1819,33 +1821,35 @@ function stReach(M, P, sets) {
     if (!ka || !kb) return;
     let ra, rb;
     if (ka === 's' && kb === 's') ra = rb = D / 2 + 9;
-    else if (ka === 's') { ra = 24; rb = D - 24 + 14; }
-    else if (kb === 's') { rb = 24; ra = D - 24 + 14; }
+    else if (ka === 's') { ra = 24 * P[a].f; rb = D - ra + 14; }
+    else if (kb === 's') { rb = 24 * P[b].f; ra = D - rb + 14; }
     else ra = rb = D / 2 + 9;
     R[a][b] = ra; R[b][a] = rb;
   });
   return R;
 }
 /* a lobe of a given tip length (px) along a 3D direction */
-function stLobeTo(cx, cy, d, tip, wid, fill, stroke) {
-  const p = stDir(d), L = tip / 2, ang = Math.atan2(p.uy, p.ux) * 180 / Math.PI, mx = cx + p.ux * L, my = cy + p.uy * L;
+function stLobeTo(cx, cy, d, tip, wid, fill, stroke, toP) {
+  let p = stDir(d);
+  if (toP) { const dx = toP.x - cx, dy = toP.y - cy, l = Math.hypot(dx, dy); if (l) p = { ux: dx / l, uy: dy / l, l: 1 }; }
+  const L = tip / 2, ang = Math.atan2(p.uy, p.ux) * 180 / Math.PI, mx = cx + p.ux * L, my = cy + p.uy * L;
   return { z: d[2], svg: `<ellipse cx="${mx.toFixed(1)}" cy="${my.toFixed(1)}" rx="${L.toFixed(1)}" ry="${wid}" transform="rotate(${ang.toFixed(1)} ${mx.toFixed(1)} ${my.toFixed(1)})" fill="${fill}" fill-opacity=".72" stroke="${stroke}" stroke-width="1.8"/>` };
 }
 function stOrbitalSvg(M, i, o, P, R = {}) {
   const c = P[i], out = [], reach = R[i] || {}, nbs = stNeighbors(M, i);
   const partnerAlong = d => nbs.find(j => reach[j] && stDot(d, stUnit(M.atoms[i], M.atoms[j])) > 0.97);
-  if (o === 's') { const r = Math.max(21, ...nbs.map(j => reach[j] || 0)); out.push({ z: 0, svg: `<circle cx="${c.x}" cy="${c.y}" r="${r.toFixed(1)}" fill="${BLUE[0]}" fill-opacity="${r > 30 ? '.5' : '.72'}" stroke="${BLUE[1]}" stroke-width="1.8"/>` }); }
+  if (o === 's') { const r = Math.max(21 * c.f, ...nbs.map(j => reach[j] || 0)); out.push({ z: 0, svg: `<circle cx="${c.x}" cy="${c.y}" r="${r.toFixed(1)}" fill="${BLUE[0]}" fill-opacity="${r > 30 ? '.5' : '.72'}" stroke="${BLUE[1]}" stroke-width="1.8"/>` }); }
   else if (ORB_DIR[o]) {
     const d = ORB_DIR[o];
     /* σ: the lobe facing the partner is drawn in the same (blue) phase as the partner's lobe, so the overlap is in phase */
     const neg = d.map(v => -v), flip = partnerAlong(d) == null && partnerAlong(neg) != null;
-    [[d, flip ? CORAL : BLUE], [neg, flip ? BLUE : CORAL]].forEach(([dd, col]) => { const j = partnerAlong(dd); out.push(j != null ? { ...stLobeTo(c.x, c.y, dd, reach[j], 13, ...BLUE), to: j } : stLobe(c.x, c.y, dd, 26, 13, ...col, 2)); });
+    [[d, flip ? CORAL : BLUE], [neg, flip ? BLUE : CORAL]].forEach(([dd, col]) => { const j = partnerAlong(dd); out.push(j != null ? { ...stLobeTo(c.x, c.y, dd, reach[j], 13 * c.f, ...BLUE, P[j]), to: j } : stLobe(c.x, c.y, dd, 26 * c.f, 13 * c.f, ...col, 2)); });
   }
   else {
     const H = stHybDirs(M, i, o);
     H.dirs.forEach((d, k) => {
       const j = H.lp[k] ? null : partnerAlong(d);
-      out.push(stLobe(c.x, c.y, d.map(v => -v), 8, 7, ...CORAL, 0), j != null ? { ...stLobeTo(c.x, c.y, d, reach[j], 14, ...BLUE), to: j } : stLobe(c.x, c.y, d, 30, 14, ...BLUE, 0));
+      out.push(stLobe(c.x, c.y, d.map(v => -v), 8 * c.f, 7 * c.f, ...CORAL, 0), j != null ? { ...stLobeTo(c.x, c.y, d, reach[j], 14 * c.f, ...BLUE, P[j]), to: j } : stLobe(c.x, c.y, d, 30 * c.f, 14 * c.f, ...BLUE, 0));
       if (H.lp[k]) { const p = stDir(d), L = 30 * Math.max(p.l, 0.42), tx = c.x + p.ux * L * 1.5, ty = c.y + p.uy * L * 1.5; out.push({ z: d[2] + 0.01, svg: `<circle cx="${(tx - p.uy * 4).toFixed(1)}" cy="${(ty + p.ux * 4).toFixed(1)}" r="2.6" fill="#1f2a44"/><circle cx="${(tx + p.uy * 4).toFixed(1)}" cy="${(ty - p.ux * 4).toFixed(1)}" r="2.6" fill="#1f2a44"/>` }); }
     });
   }
@@ -1879,6 +1883,7 @@ function stRightAngle(c) {
   return `<path d="M${(a[0] + v.ux * 0).toFixed(1)} ${a[1].toFixed(1)}m0 0" fill="none"/><path d="M${(c.x + u.ux * (r + k)).toFixed(1)} ${(c.y + u.uy * (r + k)).toFixed(1)}L${(c.x + u.ux * (r + k) + v.ux * k).toFixed(1)} ${(c.y + u.uy * (r + k) + v.uy * k).toFixed(1)}L${(c.x + v.ux * (r + k) + u.ux * k).toFixed(1)} ${(c.y + v.uy * (r + k) + u.uy * k).toFixed(1)}" fill="none" stroke="#1f2a44" stroke-width="1.8"/><text x="${(c.x + (u.ux + v.ux) * 30 - 6).toFixed(1)}" y="${(c.y + (u.uy + v.uy) * 30).toFixed(1)}" text-anchor="end" font-size="12" font-weight="800" fill="#1f2a44">90°</text>`;
 }
 function studioSvg(M, w, o = {}) {
+  ST_Z = M.view || ST_Z0;
   const P = M.atoms.map(([, x, y, z]) => stProj(x, y, z));
   const xs = P.map(p => p.x), ys = P.map(p => p.y);
   const x0 = Math.min(...xs) - 80, x1 = Math.max(...xs) + 80, y0 = Math.min(...ys) - (o.overlaps ? 108 : 92), y1 = Math.max(...ys) + 96;
@@ -1886,8 +1891,8 @@ function studioSvg(M, w, o = {}) {
   /* internuclear axis + axis gizmo */
   const ax0 = Math.min(...xs) - 70, ax1 = Math.max(...xs) + 70;
   back += `<path d="M${ax0} 0H${ax1}" stroke="#8a93ab" stroke-width="1.6" stroke-dasharray="6 5"/><text x="${ax0}" y="${y0 + 14}" font-size="12" font-weight="700" fill="#646c82">- - ${M.atoms.every(a => !a[2] && !a[3]) ? 'internuclear axis (x)' : 'x axis'}</text>`;
-  const gx = x0 + 34, gy = y1 - 30, arr = (dx, dy, lab, col) => `<path d="M${gx} ${gy}l${dx} ${dy}" stroke="${col}" stroke-width="2.4" marker-end="url(#stArr)"/><text x="${gx + dx * 1.28}" y="${gy + dy * 1.28 + 4}" text-anchor="middle" font-size="13" font-weight="800" fill="${col}">${lab}</text>`;
-  back += `<defs><marker id="stArr" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs>` + arr(32, 0, 'x', '#c4475d') + arr(0, -32, 'y', '#2f8a64') + arr(-20, 13, 'z', '#7a4fc9');
+  const gx = x0 + 34, gy = y1 - 42, arr = (dx, dy, lab, col) => `<path d="M${gx} ${gy}l${dx} ${dy}" stroke="${col}" stroke-width="2.4" marker-end="url(#stArr)"/><text x="${gx + dx * 1.28}" y="${gy + dy * 1.28 + 4}" text-anchor="middle" font-size="13" font-weight="800" fill="${col}">${lab}</text>`;
+  back += `<defs><marker id="stArr" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs>` + arr(32, 0, 'x', '#c4475d') + arr(0, -32, 'y', '#2f8a64') + arr(-ST_Z[0] / Math.hypot(...ST_Z) * 27, ST_Z[1] / Math.hypot(...ST_Z) * 27, 'z', '#7a4fc9');
   /* bonds as thin lines */
   M.bonds.forEach(([a, b]) => { back += `<line x1="${P[a].x}" y1="${P[a].y}" x2="${P[b].x}" y2="${P[b].y}" stroke="#b9bfd3" stroke-width="2"/>`; });
   /* orbitals placed (or the answer) */
@@ -1911,7 +1916,7 @@ function studioSvg(M, w, o = {}) {
   let atomSvg = [];
   M.atoms.map((a, i) => i).sort((a, b) => (M.atoms[a][3] || 0) - (M.atoms[b][3] || 0)).forEach(i => {
     const el = M.atoms[i][0], p = P[i], sel = o.sel === i && !o.overlaps;
-    atomSvg.push({ z: (M.atoms[i][3] || 0) + 0.51, svg: `<g class="oatom${sel ? ' sel' : ''}${o.bad && o.bad[i] ? ' bad' : ''}" data-oatom="${i}" ${o.overlaps ? '' : 'role="button" tabindex="0"'} aria-label="${el} atom ${i + 1}${(w.sets[i] || []).length ? ', orbitals: ' + w.sets[i].map(x => ORB_TXT[x]).join(' ') : ', no orbitals yet'}"><circle cx="${p.x}" cy="${p.y}" r="${sel ? 17 : 15}" fill="#fff" stroke="${sel ? '#4b57d1' : '#1f2a44'}" stroke-width="${sel ? 3.5 : 2}"/><text x="${p.x}" y="${p.y + 5}" text-anchor="middle" font-size="14" font-weight="800" fill="#1f2a44">${el}</text></g>` });
+    atomSvg.push({ z: (M.atoms[i][3] || 0) + 0.51, svg: `<g class="oatom${sel ? ' sel' : ''}${o.bad && o.bad[i] ? ' bad' : ''}" data-oatom="${i}" ${o.overlaps ? '' : 'role="button" tabindex="0"'} aria-label="${el} atom ${i + 1}${(w.sets[i] || []).length ? ', orbitals: ' + w.sets[i].map(x => ORB_TXT[x]).join(' ') : ', no orbitals yet'}"><circle cx="${p.x}" cy="${p.y}" r="${((sel ? 17 : 15) * p.f).toFixed(1)}" fill="#fff" stroke="${sel ? '#4b57d1' : '#1f2a44'}" stroke-width="${sel ? 3.5 : 2}"/><text x="${p.x}" y="${(p.y + 5 * p.f).toFixed(1)}" text-anchor="middle" font-size="${(14 * p.f).toFixed(1)}" font-weight="800" fill="#1f2a44">${el}</text></g>` });
   });
   if (o.overlaps) { lobes.sort((p, q) => p.z - q.z); front += atomSvg.map(a => a.svg).join(''); }
   else lobes = lobes.concat(atomSvg).sort((p, q) => p.z - q.z);
