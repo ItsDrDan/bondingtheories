@@ -12,6 +12,7 @@ Working title **Orbital Overlap**. Repo/hub label: **Bonding Theories**. Suggest
   - **Steps 4–5:** ΔH with sign, then exothermic or endothermic (unchanged).
   - **Quick ΔH** (one typed step, Skill Check, question-bank sampler) is unchanged.
   - Also: iOS no longer zooms when bonds or buttons are tapped quickly (pinch zoom still works).
+  - **v21.1 (2026-11-15):** the coefficient example in step 3 now names a bond whose count comes from a coefficient greater than 1 (for CH₄ + 2 O₂: "2(O=O) means 2 × 498 = 996 kJ"), not just the biggest count. Finished tap steps, and Learn's worked example, now show that side's Lewis structures with every bond green above the formula (Learn showed no structures before).
 - **v20 more bond-energy problems and resonance bond order (2026-11-12):**
   - **16 new bond-energy reactions, 37 in all.** All values are recomputed with OpenStax Table 7.3. The Tro test bank uses its own values (C=O 799, C–H 414), so only its reactions were used as models; the wording is original.
     - Modeled on OpenStax Ch 7 exercises 65–66: CH₄ + I₂ (+30 kJ, a true endothermic one), C₂H₄ + 3 O₂ (−1055), 2 C₂H₆ + 7 O₂ (−2340), Cl₂ + 3 F₂ → 2 ClF₃ (−807).
