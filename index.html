@@ -2404,7 +2404,7 @@ const ACH = [
   ['magnet', 'Magnet Master', 'Call para/diamagnetic right 10 times', 'react', P => (P.mag || 0) >= 10],
   ['champ', 'Challenge Champion', 'Score 8+ on a Challenge round', 'medal', P => (P.bestCh || 0) >= 8],
   ['faceoff', 'Theory Face-Off Champion', 'Score 5+ of 6 in the Theory Face-Off', 'trophy', P => (P.bestFO || 0) >= 5],
-  ['skill', 'Skill Check Ready', 'Score 8+ on Skill Check Prep', 'checklist', P => (P.bestSC || 0) >= 8],
+  ['skill', 'Skill Check Ready', 'Score 9+ on Skill Check Prep', 'checklist', P => (P.bestSC || 0) >= 9],   // v21.3: 9 of 12 (was 8 of 11)
   ['daily', 'Daily Habit', 'Finish the Daily 5 three days in a row', 'stars', P => (P.dailyBest || 0) >= 3],
   ['streak5', 'On a Roll', 'Get 5 questions right in a row', 'target', P => (P.best || 0) >= 5],
   ['streak10', 'Unbreakable Bond', 'Get 10 questions right in a row', 'trophy', P => (P.best || 0) >= 10],
