@@ -44,5 +44,6 @@ run([
  ...T.map(t=>['?topic='+t,only([t])]),
  ['?course=1B&topic=builder,ranker',[...only(['builder','ranker']),["state.course==='1B'",'course 1B kept']]],
  ['?topic=nonsense',[["window.scrollY<50",'unknown topic is ignored']]],
+ ['?topic=mixer',[["(()=>{let x=0,bad=0;for(let i=0;i<600;i++){const q=genMixer(),p=q.parts[0],I=info(q.mol);if(I.expanded){x++;if(!(p.want.d>0&&(p.groups===5||p.groups===6)&&/expanded octet/.test(q.tag)))bad++}if(!checkMixer(p,{s:p.want.s,p:p.want.p,d:p.want.d}).ok)bad++}return bad===0&&x>120&&x<300})()",'Mixer: about 1 in 3 questions are expanded octets (sp³d/sp³d²) and every right mix checks out']]],
  ['?mode=skill&topic=mixer',[["!!state.ch&&state.ch.kind==='skill'",'?mode= still wins']]],
 ]);
