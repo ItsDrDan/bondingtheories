@@ -3100,6 +3100,9 @@ function init() {
   bind(); setCourse(c); paintIcons();
   let m = ''; try { m = (new URLSearchParams(location.search).get('mode') || '').toLowerCase(); } catch (e) {}
   if (['daily', 'skill', 'challenge', 'faceoff'].includes(m)) startRound(m); else if (m === 'learn' || m === 'practice') setMode(m);
+  /* deep link for the Demo Library: ?topic=mixer (or a comma list, e.g. ?topic=builder,ranker) opens Practice on just those topics */
+  else { let tp = []; try { tp = (new URLSearchParams(location.search).get('topic') || '').split(',').map(s => s.trim()).filter(t => TOPICS[t]); } catch (e) {}
+    if (tp.length) { state.sel = new Set(tp); state.mode = 'practice'; state.ch = null; save(); renderChooser(); newQuestion(true); scrollToPlay(); } }
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 </script>
